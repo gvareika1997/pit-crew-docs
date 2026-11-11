@@ -1,11 +1,39 @@
 ---
 title: Install
-description: Add the Pit Crew marketplace, install the plugin at user scope and run the health check.
+description: Get access to the private Pit Crew repository, install the plugin at user scope, and update or uninstall it.
 ---
 
 import { Aside, Steps, Tabs, TabItem } from '@astrojs/starlight/components';
 
-Two commands install Pit Crew. Two one-time settings keep it up to date. One command checks the result.
+Pit Crew is a private plugin. Its repository is not public: access is by invitation. This documentation is public, so you can read how it works before you ask.
+
+Once you have access, two commands install it, one setting keeps it up to date and one command checks the result.
+
+## Get access
+
+You need read access to the Pit Crew repository on GitHub. Access is given to companies, by invitation.
+
+<Steps>
+
+1. **Ask for an invitation.**
+
+   Write to **`ACCESS-CONTACT-TO-BE-DEFINED`** and send the GitHub username of each person who will install the plugin.
+
+2. **Accept the invitation on GitHub.**
+
+   Until you accept it, the repository answers "not found" and the install commands below fail.
+
+3. **Check that your machine can read the repository.**
+
+   ```bash
+   gh auth login
+   gh auth setup-git
+   gh repo view gvareika1997/pit-crew --json name
+   ```
+
+   The last command prints the repository name when your account has access.
+
+</Steps>
 
 ## Before you start
 
@@ -35,7 +63,7 @@ Everything else is optional. See [Connect your tools](../connect-your-tools/).
    claude plugin install pit-crew@pit-crew
    ```
 
-   Install at **user scope**, so the commands work from any repo on the machine.
+   Install at **user scope**, so the commands work from any repo on the machine. User scope is the default of `claude plugin install`.
 
    <Aside type="note" title="Using a fork or a company pack?">
    Replace `gvareika1997` with the GitHub account that hosts your marketplace. An organisation that publishes a pack installs the pack instead: the pack pulls the core in through its `dependencies`.
@@ -45,7 +73,9 @@ Everything else is optional. See [Connect your tools](../connect-your-tools/).
 
    In Claude Code, run `/plugin`, then go to **Marketplaces → pit-crew → Enable auto-update**. Third-party marketplaces have auto-update off by default.
 
-3. **Store a git credential, if the marketplace repository is private.**
+3. **Keep a git credential stored for the repository.**
+
+   The repository is private, so every update needs one.
 
    <Tabs>
      <TabItem label="HTTPS remote">
@@ -110,6 +140,28 @@ claude plugin install pit-crew-<company>@pit-crew
 Then restart Claude Code. The pack registers itself on session start, and its roles are on. Run `/pit-crew:setup` to see which roles are on and to fill in the credentials of the pack's servers.
 
 A pack pins a range of core versions. A pack written for another major version is ignored with a warning, never half-applied. See [Packs](../../packs/).
+
+## Update
+
+With auto-update on, Claude Code updates the plugin in the background. To update by hand:
+
+```bash
+claude plugin marketplace update pit-crew
+claude plugin update pit-crew@pit-crew
+```
+
+The first command refreshes the marketplace from its source. The second updates the plugin to the latest version. Restart Claude Code to apply it.
+
+## Uninstall
+
+```bash
+claude plugin uninstall pit-crew@pit-crew
+claude plugin marketplace remove pit-crew
+```
+
+The first command removes the plugin. Add `--keep-data` to keep the plugin's persistent data directory (`~/.claude/plugins/data/`). The second removes the marketplace from your settings.
+
+`claude plugin uninstall` acts on user scope by default. If you installed at another scope, pass `--scope project` or `--scope local`. If you installed a pack, uninstall the pack the same way.
 
 ## Runs started on an older version
 

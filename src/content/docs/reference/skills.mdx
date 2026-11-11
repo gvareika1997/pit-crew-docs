@@ -1,29 +1,41 @@
 ---
-title: "Skills (16)"
-description: "Every skill the Pit Crew core ships, and when each one loads."
+title: "Skills (17)"
+description: "Every skill the Pit Crew core ships, with what each one does."
 ---
 
-A skill loads when its description matches what the run is doing. You rarely name one: the phase commands load the skills they need. A skill marked **manual** runs only when you type it.
+A skill is a set of instructions Claude Code loads for one kind of task. You rarely name one: the phase commands load the skills they need.
 
-| Skill | Loads | When it is used |
-|---|---|---|
-| `pit-crew:adr` | on its own | Create an architecture decision record (ADR, a.k.a. "dec") in docs/decisions/ with the repo's naming convention and TEMPLATE.md. Use when documenting a decision that is hard to reverse, surprising without context and a real trade-off (or regulatory/audit-driven) — service ownership, sync vs event, provider lock-in, a deliberate omission ("write an ADR", "record this decision"). Tambien en espanol: "escribi un ADR", "documenta esta decision", "registra la decision", "hace un dec". |
-| `pit-crew:artifact` | on its own | Use when a pit-crew run publishes or republishes its shareable plan page: the claude.ai Artifact published right before the 1c gate so the human reads it before approving (Product and Technical tabs, rendered diagram), the Evidence tab phase 3 adds after the DEV verdict (what was tested, what was not, with validated links), the evidence-only page of a run with no plan page, and the republish phase 3 does when the plan or the evidence changed (página del plan, artifact para compartir con el equipo). Not for ad-hoc pages outside a harness run. |
-| `pit-crew:brainstorm` | **manual** | Manual only, /pit-crew:brainstorm: takes a fuzzy idea too big for one ticket to a decided initiative in one sitting. Aligns on a focus statement, researches the current state with numbers, diverges into alternatives and a wild idea, converges on one option, publishes a shareable page and, only after the person approves it, creates one tracker project with a milestone per deliverable. |
-| `pit-crew:dev-verification` | on its own | Use when pit-crew must verify acceptance criteria through an ephemeral environment per branch, a shared environment, in-cluster access or a local run from the worktree, driving the screen in a browser when a criterion names it. Marks one case per approved acceptance criterion with its own evidence, records a partial or untested case with its reason instead of dropping it, and reports unavailable proof honestly. |
-| `pit-crew:diagram` | on its own | Use when a pit-crew phase draws its one visual: the architecture diagram of the plan page's Technical tab at the 1c gate, the lead visual of a PR body written by `pit-crew:pr`, in a run or outside one, or the optional diagram of a `pit-crew:brainstorm` page (diagrama del gate de arquitectura, visual del body de la PR). Plain text and mermaid only, rendered by the plan page and by GitHub. Not for other ad-hoc diagrams. |
-| `pit-crew:flow` | on its own | Create or update a feature flow doc in docs/flows/ — the end-to-end narrative of a feature across services (purpose, terminology, scope, steps, sequence, data touched, open decisions). Use when describing how a feature works ("document the flow", "write the flow doc", "/flow"). Tambien en espanol: "documenta el flujo", "escribi el flow", "documenta como funciona la feature". A flow is a living doc, not an immutable decision — for the *why* behind a choice use /adr instead. |
-| `pit-crew:jira` | on its own | Read-only lookup of an existing Jira ticket through the Atlassian connector, with no creation or edit of any ticket. Use when a run or the user hands over an existing Jira id and needs its type, status, assignee, priority, description or links. Tambien en espanol - "mirá este ticket de Jira". |
-| `pit-crew:linear` | on its own | Creates, searches and updates issues in a Linear workspace (teams, projects, labels, statuses, priorities). Use when the user asks to "create a Linear issue", "add an issue to Linear", "create a task in Linear", "log a bug in Linear", "create a feature issue", "assign an issue", "move issue to a project", "check what's in progress in Linear", "list issues", "search Linear issues", "crea un issue en Linear", "registra un bug en Linear", "asigna este issue", "lista los issues de Linear", "busca issues en Linear", or mentions working with Linear (teams, projects, labels, statuses, priorities). Linear not connected: the person connects it on claude.ai guided by /pit-crew:setup, a manual-only command that exists (the person types it; never say it does not exist). |
-| `pit-crew:pipeline` | on its own | Use when running or resuming pit-crew plan, dev, test or deploy phases. Defines state writes, gates, the worktree rule, compact handoffs, risk-based delegation and phase results. |
-| `pit-crew:pr` | on its own | Use when writing or rewriting the title and body of a pull request: phase 3 of a pit-crew run (step 2 opens the PRs, step 3.4 fills their cases) or a PR opened outside a run. Four sections a reviewer can scan: Summary (one visual), Evidence (before and after), Merge danger (door and blast radius), Links; a one-way door adds the «Señal de éxito» section the deploy monitor reads. Not the push mechanics (`resources/git.md`), the review loop or the merge. Tambien en espanol: el body de la PR, escribi la descripcion de la PR. |
-| `pit-crew:pr-comment-resolution` | on its own | Use when pit-crew must classify, answer and resolve GitHub PR feedback across inline threads, top-level comments and review bodies from review bots or humans, then verify approval against the current head. |
-| `pit-crew:setup` | **manual** | Manual first-time setup and health check of a Claude Code install for pit-crew. Inventories what pit-crew needs (present, missing, needs action), proposes removing user-scope MCP servers and plugins pit-crew does not use or that shadow a bundled server, always with a backup and a one-item restore, guides the credentials and the connectors of the roles that are on (tracker, knowledge base), and offers RTK, caveman and context-mode one by one. Runs only when the person invokes /pit-crew:setup. Triggers "set up pit-crew", "first-time setup", "clean my Claude config", "check my pit-crew setup", "configurá pit-crew", "primer setup", "limpiá mi claude", "revisá mi config de pit-crew", "restore what the setup removed", "restaurá lo que borró el setup". |
-| `pit-crew:skill-authoring` | on its own | Use to create, edit, improve, rename, retire or vary a text an agent reads: a skill, an agent with its tools: grants, a command, a hook, a CLAUDE.md, an AGENTS.md or a .claude/rules file. Gives numbered writing rules with a done check each (X-WRITE-1 to 7, from writing-for-agents), the plugin rules per piece, the lint and the hand-off to ai-audit. Triggers: write a skill, create an agent, fix an agent tools grant, add a hook, edit CLAUDE.md; escribir un skill, crear un agent, revisar los grants de tools, agregar un hook, editar el CLAUDE.md. Not for MCP tools (that is tool-authoring) nor for auditing an existing setup (that is ai-audit). |
-| `pit-crew:task-routing` | on its own | Size the pipeline to the task by EFFORT and TIME/TOKENS, never by model. Given the ticket and each repo's slice, pick inline-vs-delegate, the Builder effort profile, the context budget and the rounds — proportional to difficulty — and flag high-stakes work for extra verification. Use when deciding how much to spend on a task or how far a small change should run through the pipeline. The model stays the harness role default. |
-| `pit-crew:tool-authoring` | on its own | Use to create, edit, improve, rename, retire or vary an MCP tool, meaning a tool a panel exposes as one more channel next to its screen (same actions and errors as REST, role declared once on the endpoint, write 1:1 with its endpoint, fail-closed audit, one response envelope with panel links). Gives the design rules, test templates and the hand-off to ai-audit. Triggers: new MCP tool, expose my service as MCP, add a tool to the MCP, rename or retire an MCP tool; crear una tool MCP, exponer el micro como MCP, agregar una tool al MCP, renombrar o retirar una tool MCP. Not for skills, agents, commands, hooks or CLAUDE.md (that is skill-authoring) nor for auditing an existing setup (that is ai-audit). |
-| `pit-crew:triage` | on its own | Use to investigate a bug or any problem with evidence and report its root cause, read-only on code, data and tickets (its one write is a guarded knowledge-base drift fix), without fixing the bug: alone from a ticket, a bug description, a screenshot or log lines, or as the step pit-crew:plan runs before planning a bug fix. Two depths, Full (parallel investigators) and Quick (inline, minutes), plus the `current_state` mode `pit-crew:brainstorm` calls. Triggers: triage this bug, root cause, investigate the cause, find out why this fails; triagea esto, investigá la causa, causa raíz, por qué falla, mirá esta captura. Not for classifying PR review comments (that is pit-crew:pr-comment-resolution). |
+## Skills you type
+
+These run only when you type them. The model never loads them on its own.
+
+| Skill | What it does |
+|---|---|
+| `/pit-crew:brainstorm` | Takes an idea too big for one ticket to a decided initiative: a focus statement, research, alternatives, one chosen option, a shareable page and, after you approve it, one tracker project with a milestone per deliverable. |
+| `/pit-crew:bro` | Restates the last message in plain language, with no jargon. |
+| `/pit-crew:setup` | First-time setup and health check: inventories what Pit Crew needs, proposes a cleanup with a backup and a restore, and guides the credentials and connectors of the roles that are on. |
+
+## Skills that load on their own
+
+These load when the work in front of the model matches them: inside a run, or when you ask for that task outside one.
+
+| Skill | What it does |
+|---|---|
+| `pit-crew:adr` | Writes an architecture decision record in `docs/decisions/`, with the repo's naming convention and template. |
+| `pit-crew:artifact` | Publishes the run's shareable plan page right before the 1c gate, and adds the Evidence tab after the DEV verdict. |
+| `pit-crew:dev-verification` | Verifies the acceptance criteria in an ephemeral environment, a shared environment, in-cluster or in a local run, and records one case per criterion with its own evidence. |
+| `pit-crew:diagram` | Draws the one visual of a phase: the architecture diagram of the plan page, the lead visual of a PR body or the optional diagram of a brainstorm page. Plain text and mermaid only. |
+| `pit-crew:flow` | Creates or updates a feature flow doc in `docs/flows/`: the end-to-end narrative of a feature across services. |
+| `pit-crew:jira` | Looks up an existing Jira ticket, read-only. It never creates or edits a ticket. |
+| `pit-crew:linear` | Creates, searches and updates issues in a Linear workspace. |
+| `pit-crew:pipeline` | The rules every phase follows: state writes, gates, the worktree rule, compact handoffs, risk-based delegation and phase results. |
+| `pit-crew:pr` | Writes the title and body of a pull request in four sections: Summary, Evidence, Merge danger and Links. |
+| `pit-crew:pr-comment-resolution` | Classifies, answers and resolves pull request feedback from review bots and humans, then verifies approval against the current head. |
+| `pit-crew:skill-authoring` | Writing rules for the texts an agent reads: a skill, an agent, a command, a hook, a `CLAUDE.md`, an `AGENTS.md` or a rules file. |
+| `pit-crew:task-routing` | Sizes the pipeline to the task by effort, time and tokens: inline or delegated, the Builder effort profile, the context budget and the rounds. |
+| `pit-crew:tool-authoring` | Design rules and test templates for an MCP tool. |
+| `pit-crew:triage` | Investigates a bug with evidence and reports its root cause, read-only, without fixing it. Two depths: Full and Quick. |
 
 ---
 
-<small>Generated from pit-crew `42bde34` (core 6.1.0) by `scripts/gen-reference.mjs`. Do not edit by hand.</small>
+<small>Generated from pit-crew `1474729` (core 6.2.1) by `scripts/gen-reference.mjs`. Do not edit by hand.</small>

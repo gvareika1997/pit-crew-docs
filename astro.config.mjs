@@ -23,8 +23,9 @@ export default defineConfig({
       favicon: '/favicon.svg',
       customCss: ['./src/styles/theme.css'],
       lastUpdated: true,
+      // The plugin repository is private, so the link goes to this site's own repository.
       social: [
-        { icon: 'github', label: 'GitHub', href: 'https://github.com/gvareika1997/pit-crew' },
+        { icon: 'github', label: 'Docs source on GitHub', href: 'https://github.com/gvareika1997/pit-crew-docs' },
       ],
       sidebar: [
         { label: 'Introduction', link: '/' },
