@@ -1,0 +1,110 @@
+---
+title: Test
+description: Phase 3 runs the tests the change earned, reviews the diff before it leaves your machine, opens the PRs, verifies in DEV and resolves review comments.
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+Phase 3 is the last phase a run walks by itself. It usually follows [Dev](../dev/) in the same run. You can also run it alone, to resume or to re-run phase 3 on an existing state:
+
+```text
+/pit-crew:test [path to state.json]
+```
+
+With no argument, Pit Crew uses the most recently updated state and says which. The state must be at phase `test`; otherwise Pit Crew says what is missing and stops. When it resumes from a handoff, it says in one line where it picked up.
+
+## What happens
+
+<Steps>
+
+1. **The Configurator starts in the background.** `df-dev-configurator` prepares the verification route, its environment and the DEV data the test spec declares. It records each item before it creates it, so cleanup can find it. It never touches production. A `hotfix` skips this.
+
+2. **The test scope the change earned.** The level per repo was sized at Gate 1c:
+
+   | Signal | Level | What runs |
+   |---|---|---|
+   | `hotfix` or `quick` run | `touched` | The build and the existing tests on the touched code |
+   | Money, auth, prod or something irreversible | `module+e2e` | The module's suite, plus the touched area's e2e |
+   | Routed as trivial | `touched` | The added or changed tests and their nearest neighbours |
+   | Anything else | `module` | The module's suite; e2e only for a UI route or a cross-service contract |
+
+   Pit Crew never runs the whole suite: CI owns that. Repos with a `format` command also run the formatting gate CI checks.
+
+3. **Pre-push review.** Per repo, before anything is pushed:
+   - `df-standards` checks the changed lines against the repo's rules and the stack checklists, on `full` and `quick` runs.
+   - The secret scan runs `gitleaks` over the branch's commits and changed files, on every run.
+   - A repo that declares a local startup command runs it.
+   - A local LLM review runs when the mode is `llm` and the `review` role names a pre-push skill. The mode is `llm` when the design carries a money, transaction or idempotency risk, or the judge did not run on a diff that is not small.
+
+4. **Push and PRs.** A plain push, never forced. Each PR opens ready for review, never as a draft, with the labels `pit-crew` and `pit-crew-<task_type>`. The title is `<feat|fix>(<ticket id>): <what>`, in your language. See [Evidence and PRs](../evidence-and-prs/).
+
+5. **First bot round.** On a `full` run, Pit Crew waits for each review bot's first verdict and answers it in one push per PR.
+
+6. **Verify in DEV.** `df-dev-tester` runs the spec paths in DEV, driving the screen in a browser when a path names one. It returns raw evidence and never grades its own paths. `df-case-designer` grades the evidence against the spec. The route is one of `denv` (an ephemeral environment), `shared_dev`, `in_cluster`, `local` or `none`. A UI-only run verifies locally.
+
+7. **Startup gate.** For each non-UI repo, Pit Crew records whether the service reaches readiness on the pushed head. A later push records it again.
+
+8. **Cases reach the PR.** Every PR body except a hotfix's carries the cases, expected against observed. The plan page gets an Evidence tab. A flow doc written in phase 2 is marked shipped.
+
+9. **Comments to resolved.** `df-comment-resolver` handles new feedback on each PR, from bots and humans, on every channel. Rounds continue until each PR has a verdict on its current head.
+
+10. **Report, retro, cleanup.** Pit Crew removes the DEV fixtures it created, prints the report and sends a notification. It writes a retro only when the run warrants one. It removes the worktrees. The state folder stays for `/pit-crew:deploy`.
+
+</Steps>
+
+A criterion no route can prove is reported `not_tested`, and the PRs still open. A `hotfix` has no DEV verification: every case is `not_tested`, reason "validate in prod", and Pit Crew opens a follow-up ticket to redo the change properly.
+
+## What you decide
+
+Usually nothing. Phase 3 does not stop before the PRs, and it never merges. You act only on the stops below. In guided mode, you also say who approves the PRs.
+
+## What you get
+
+| Artifact | Where |
+|---|---|
+| PR links, one per repo | The report and the notification |
+| The report: cases, expected against observed, and one gates line | The terminal, and `~/.claude/pit-crew/_reports/<slug>-<date>.md` |
+| The Evidence tab | The plan page, when the run has one |
+| A retro, when warranted | Its path in the phase result |
+| A follow-up ticket | Hotfix only |
+
+The gates line names the test level that ran per repo, the pre-push counts, the DEV result (`verified` or `incomplete n/m`), comment counts and startup. Nothing is posted to chat unless you ask.
+
+## Which agents work here
+
+| Agent | Job |
+|---|---|
+| `df-dev-configurator` | Prepares the route, the environment and the DEV data |
+| `df-dev-tester` | Runs the spec paths in DEV and returns raw evidence |
+| `df-case-designer` | Grades the evidence against the spec |
+| `df-standards` | Pre-push standards pass over each repo's diff |
+| `df-comment-resolver` | Resolves one PR's new feedback and checks the verdict |
+| `df-judge-recheck` | Checks a resolver's unpushed serious fix |
+| `df-retro`, `df-retro-publisher` | Write the retro and file its items in the tracker |
+
+## What each role adds
+
+| Role | Adds in this phase | When it is off |
+|---|---|---|
+| `env` | DEV verification in a test environment | No DEV verification |
+| `data` | Test data and data corroboration | A criterion that needs a row is not tested |
+| `logs` | Log evidence for each case | No log evidence |
+| `review` | Waits on review bots; may name the local pre-push skill | No review bot; the LLM review step is skipped and said |
+| `tracker` | Retro issues and the hotfix follow-up | Neither is filed |
+
+## When it stops
+
+- **The fix cap.** Three attempts on a red suite. Before each fix, Pit Crew runs the red test on the base branch.
+- **`gitleaks` is missing or fails.** Nothing leaves the machine unscanned. Install it with `brew install gitleaks`, then resume.
+- **A secret in a commit.** Pit Crew names the commit, file and line, never the value. Rewriting the commit and rotating the credential are your call.
+- **A blocking standards finding** that a fix did not clear.
+- **A failed local startup.** Fix the cause, then resume.
+- **A denied push or `gh` call.** Pit Crew prints `/pit-crew:test <state-path>` and stops with `needs_input`.
+- **A failed tool probe** before the Configurator or Tester runs. Reconnect the tool, often with `/mcp`.
+
+A run that stops `blocked` or `needs_input` keeps its DEV fixtures and its state, and resumes in this phase. See [State and reports](../state-and-reports/).
+
+## Next
+
+- [Deploy](../deploy/): merge and roll out, when you decide.
+- [Evidence and PRs](../evidence-and-prs/): what the PR body carries.

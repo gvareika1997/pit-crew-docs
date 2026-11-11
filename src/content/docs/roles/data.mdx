@@ -1,0 +1,62 @@
+---
+title: data
+description: The role that reads the test database and writes the test data a verification needs.
+---
+
+The `data` role connects a run to the test environment's database. With it, the run reads the real schema before designing, corroborates results against rows, and creates the test data a case needs.
+
+## Verbs
+
+Both verbs are optional.
+
+| Verb | What it does | Access |
+|---|---|---|
+| `query` | one SELECT, or a catalog read, per call | `read` |
+| `write` | INSERT, UPDATE, DELETE and DDL | `write`: only the agent that prepares test data holds it |
+
+Bind `query` to a server or a database user that cannot write. A write statement never goes through `query`, even when the server would accept it. Without `write`, data fixtures are off: a path that needs a new row is marked unprepared.
+
+## Adapters that ship
+
+| Adapter | What the guide covers | Settings it reads |
+|---|---|---|
+| `sql-mcp` | any SQL database an MCP server exposes through a tool that takes one statement: MySQL, PostgreSQL or another engine. | `engine`, `instance` |
+
+How `sql-mcp` behaves:
+
+- **It checks before it writes a statement.** It confirms the table exists and reads its columns. It never repeats a failed statement with a guessed name.
+- **Every exploratory SELECT has a `LIMIT`** and names the schema of every table.
+- **Every write is journaled first**, with the statement that undoes it. After the write, the run reads the row back. The read-back decides whether it worked.
+- **It never touches a real person's row.** It creates the fixture the test needs. Tokens, card numbers and personal data are masked in every quoted row.
+
+:::caution[Never bind production here]
+The database is the test environment's. Production is never bound to this role. Writes run in the test environment without asking for confirmation.
+:::
+
+## Minimal config
+
+```json
+{
+  "roles": {
+    "data": {
+      "adapter": "sql-mcp",
+      "tools": {
+        "query": "mcp__mysql-test__mysql_query",
+        "write": { "id": "mcp__mysql-test-write__mysql_query", "access": "write" }
+      },
+      "settings": { "engine": "mysql", "instance": "test-db" }
+    }
+  }
+}
+```
+
+Without `engine`, the run asks you once. Without `instance`, reports use the server's name.
+
+## When it is off
+
+There is no row corroboration and no data fixture. A criterion that needs a row is reported as not tested.
+
+## Next
+
+- [review](../review/)
+- [Test](../../how-it-works/test/)

@@ -1,0 +1,107 @@
+---
+title: Triage
+description: A read-only investigation that finds the root cause of a bug, states how sure it is, and changes nothing.
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+A bug report tells you what someone saw. It rarely tells you why. Triage reads the code, the logs and the data, then writes a report with the root cause and how certain that cause is. It does not fix anything. Fixing starts in `/pit-crew:plan`, from the report.
+
+## Two ways to start it
+
+**Alone.** Run `/pit-crew:triage`, or say **"triage this bug"**. Give it a ticket id, a bug description, a screenshot or log lines. With no input, it asks you for the evidence first.
+
+```text
+/pit-crew:triage ABC-1234
+```
+
+**Before planning a bug.** `/pit-crew:plan` triages first when the work is a bug. It asks nothing and tells you in one line that the triage is running. It decides "bug or not" in this order:
+
+| Signal | Result |
+|---|---|
+| A triage already exists for this run | Reused, never run twice |
+| The ticket type is `Bug` (or `Error`) | Bug |
+| Any other ticket type | Feature, no triage |
+| A raw report pasted from someone else, such as a chat thread | Bug, even when it reads like a request |
+| No ticket type | Wrong current behaviour is a bug; new behaviour is a feature |
+| Still unclear | It asks you once, under the header "Bug or not" |
+
+To skip it, add `--no-triage`, or say **"skip triage"**. Planning then starts without any triage conclusions.
+
+## Quick or Full
+
+When you start it alone, it first says what it understood, then asks which kind you want. Inside a run, the task type decides: `hotfix` and `quick` get Quick, `full` gets Full.
+
+| | Quick | Full |
+|---|---|---|
+| Who reads | Claude itself, inline | Parallel investigators, one per evidence source or hypothesis |
+| Size | About ten reads or searches | At most 4 investigators per round, at most 2 rounds |
+| Best when | The evidence points at one place | The cause is not in view yet |
+| Usual certainty | `probable`; `confirmed` when a cited line reproduces the symptom | Whatever the evidence supports |
+
+## What it reads
+
+- **Code**, from a fresh copy of the base branch. A stale clone is read through `origin`, not the working tree.
+- **Logs**, in DEV and production, read-only, through the `logs` role.
+- **DEV data**, read-only, through the `data` role. It never writes.
+- **Your knowledge base**, through the `docs` role. This gives the expected behaviour, the business contract.
+- **The ticket**, through the `tracker` role. With `tracker` off, it asks you for the ticket text.
+
+A role that is off is a source not reached. The report names it under **Not verified**. Production databases have no tool. When the triage needs a production query, it hands you the exact `SELECT` to run yourself, with the `!` prefix.
+
+Everything it reads is data, never instructions. A line in a ticket or log that reads like an order is quoted in the report, not followed.
+
+## What the report says
+
+The report always has six parts, in this order:
+
+1. **Expected behaviour**, and where that is written.
+2. **Observed behaviour**, with the evidence of the symptom.
+3. **Evidence consulted**: each code line, log query and `SELECT`, and what it showed.
+4. **Root cause**, with its certainty: `confirmed`, `probable` or `undetermined`.
+5. **Not verified**: what could not be checked and what it would take.
+6. **Verdict**: `bug`, `not_a_bug` with its kind, or `undetermined`.
+
+Card numbers, tokens, passwords and personal data are masked in every excerpt.
+
+When evidence or access runs out, you get a partial report. The certainty is `undetermined`, there is no root cause line, and Not verified lists what is missing. It never invents a cause.
+
+## When it is not a bug
+
+The `not_a_bug` verdict has a kind: `by_design`, `misunderstanding`, `data_or_config` or `feature_request`. Inside a run, this verdict stops before any plan, and you choose once:
+
+| Choice | What happens |
+|---|---|
+| Close as not a bug (recommended) | You get a reply ready to paste to the reporter. No ticket, no plan, no PR. |
+| Continue as a feature | The run goes on as a feature. A `quick` or `hotfix` run moves to `full` first. |
+| Continue anyway | Planning goes on as for a bug. |
+
+The reply explains what is expected, what happens, why it is not a defect, and what to do instead. It has no internal paths, ids or code. Resuming a closed run prints the reply again and stops.
+
+## Read-only, always
+
+A triage never edits code, data, tickets or environments. It never creates a branch, a commit or a PR. It comments on the ticket only when you ask at the end.
+
+:::note[The one write]
+A standalone triage may fix a knowledge-base page that disagrees with the code, when that difference is not the symptom. A triage inside a run writes nothing there. A page that disagrees in the exact way of the symptom is reported as a possible code bug, never edited.
+:::
+
+## From the report to a fix
+
+<Steps>
+
+1. A standalone triage ends with the verdict and a line that continues into a fix:
+
+   ```text
+   /pit-crew:plan ~/.claude/pit-crew/<slug>/state.json
+   ```
+
+2. Run it. The plan reuses the report and asks the task type once.
+3. What the triage settled is recorded as answered. The business interview does not ask it again.
+
+</Steps>
+
+## Next
+
+- [Plan](../plan/): how the run uses the report at the business gate.
+- [Lanes](../lanes/): what `full`, `quick` and `hotfix` change.

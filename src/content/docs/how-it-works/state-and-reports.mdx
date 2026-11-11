@@ -1,0 +1,102 @@
+---
+title: State and reports
+description: Where a run keeps its state, how it survives a compact and resumes, what the report holds, when a retro is written and what cleanup removes.
+---
+
+A Pit Crew run can last longer than one session. It can hit a compact, lose its terminal or need a relaunch with open permissions. Everything it needs to continue lives in one state file outside your repos, and every run leaves one report behind.
+
+## Where state lives
+
+Each run has a folder at `~/.claude/pit-crew/<slug>/`. The slug is the ticket id in lowercase, such as `abc-1234`, or a short kebab-case name when there is no ticket. The state file is `state.json` in that folder.
+
+The folder sits outside every repo, so no branch, stash or checkout can touch it. Only the run's merge script writes the state file. It applies changes atomically and refuses a write that breaks a gate rule. Do not edit `state.json` by hand.
+
+| In the run folder | What it holds |
+|---|---|
+| `state.json` | The run: ticket, lane, repos, approvals, tests, PRs, verification |
+| `wt/<repo>` | The git worktree of each repo, where all the work happens |
+| `patches/` | Pending changes to the state, and `applied/` once merged |
+| `results/` | The result files of the testing agents |
+| `tmp/` | Scratch files: diffs, logs, run facts, wait scripts |
+| `browser/` | DEV session files. They are credentials, so they are deleted at the end of every run |
+| `retro-ledger.json` | Which retros ran and what they published |
+
+Reports live in a sibling folder, `~/.claude/pit-crew/_reports/`, so cleanup never takes them.
+
+## What survives a compact
+
+The state file survives a compact, a session cut and the switch from plan mode to open permissions. It also survives the close of phase 3. Only `/pit-crew:deploy` deletes it, once every rollout completed.
+
+Evidence stays reusable while its files are unchanged at the recorded commit. A resumed run passes only the delta to its agents. A new commit invalidates evidence only for the paths it touched.
+
+## Resuming a run
+
+| Command | What it does with a state path | Without one |
+|---|---|---|
+| `/pit-crew:plan` | Says where the run stands and continues from the first unfinished step | Starts a new run |
+| `/pit-crew:dev` | Continues phase 2 | Uses the most recently updated run and says which |
+| `/pit-crew:test` | Resumes phase 3, or re-runs it on an existing state | Uses the most recently updated run and says which |
+| `/pit-crew:deploy` | Merges and rolls out that run's approved PRs | See [Deploy](../deploy/) |
+
+```text
+/pit-crew:test ~/.claude/pit-crew/abc-1234/state.json
+```
+
+When a phase stops, it ends its message with a status: `completed`, `blocked` or `needs_input`. On `blocked` it says exactly what is missing and which phase to re-run. When phase 2 handed off, phase 3 reads the handoff note first and says in one line where it resumed.
+
+:::caution[Old runs]
+A run started on Pit Crew 2.x cannot be resumed on the current version. Finish it first, or start it again with `/pit-crew:plan`. Its ticket id reuses the existing ticket instead of creating another.
+:::
+
+## The report
+
+Every run writes one compact report:
+
+```text
+~/.claude/pit-crew/_reports/<slug>-<YYYY-MM-DD>.md
+```
+
+It is built from the state's counters and timestamps, not from a new investigation. It is written in the language of your conversation. What it shows:
+
+- **The two-line recap**, copied word for word from what you approved at the gates.
+- **An "e2e incomplete" warning** before the PR links, when any criterion was partial or not tested. Each case shows what was expected against what was observed.
+- **A gates line**: `DEV verified n/n` or `DEV incomplete`, whether the evidence is the PR's own or carried from an earlier commit, and how many fixtures were removed, kept or left in DEV.
+- **The startup check** of each backend repo: pass, fail or skipped, with its reason.
+- **Pre-existing reds**: tests that also fail on the base branch.
+- **One line per proportionality decision**: why there was or was not a plan page, the money acknowledgement, the pre-push review mode and the verification route.
+
+The same evidence goes into each PR body. A hotfix has no cases and no evidence section.
+
+## When a retro is written
+
+A retro is earned, not automatic. A clean run writes its report and prints `Retro: skipped (clean run)`. A run earns a retro when it was:
+
+- blocked or waiting for your input;
+- retried: a small Builder escalated to the full one, an agent was continued after its turn budget, or fix rounds reached the cap.
+
+A normal fix round does not make a run retried.
+
+The retro runs at two moments. The early one runs right after the PRs open, and never on a hotfix. The final one runs at the end of phase 3, only when something new happened since. The early retro writes `<slug>-<date>-early.md` in `_reports/`. The final retro appends its block to the main report and never repeats an early item. A retro runs in the background, except when the run is blocked, needs input, repeated work, hit surprising tool behaviour, or you asked for a deeper analysis.
+
+When a `tracker` role is connected, the retro's improvements become at most three issues for the whole run. They go to the tracker project the binding names, unassigned. The text is sanitized: secrets, emails and personal data are masked. With the `tracker` role off, nothing is published and the report file is the only output.
+
+| Variable | Effect |
+|---|---|
+| `PIT_CREW_RETRO_PUBLISH=0` | Turns publishing off |
+| `PIT_CREW_RETRO_PROJECT` | Overrides the project name |
+
+## Cleanup
+
+| When | What is removed | What stays |
+|---|---|---|
+| End of phase 3, any outcome | DEV session files under `browser/` | Everything else |
+| End of phase 3 | Each worktree that holds no uncommitted or unpushed work | A worktree with work in it. The run prints where it lives |
+| `/pit-crew:deploy`, every rollout completed | The whole run folder, after printing the report | The `_reports/` folder |
+| A `blocked` or `needs_input` stop, in any phase | Nothing | The state is the only way to resume |
+
+With no `deploy` role connected, a rollout counts as completed at its merge, recorded as not observed. If a worktree is still live under the run folder, deploy skips the delete and says where both live.
+
+## Next
+
+- [The flow](../the-flow/): where each phase can stop and how it resumes.
+- [Telemetry](../../roles/telemetry/): what the run can send when you turn it on.

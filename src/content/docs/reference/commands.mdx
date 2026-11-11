@@ -1,0 +1,38 @@
+---
+title: "Commands (4)"
+description: "The phase commands of Pit Crew, with their arguments."
+---
+
+The phases of a run. Each one is a slash command you type in Claude Code. Phase pages: [plan](../../how-it-works/plan/), [dev](../../how-it-works/dev/), [test](../../how-it-works/test/), [deploy](../../how-it-works/deploy/).
+
+## `/pit-crew:plan`
+
+Phase 1/3 of pit-crew. A bug (Bug ticket type, or wrong current behavior) first runs a read-only pit-crew:triage, quick or full by task type, skippable with --no-triage. Discusses the feature at the BUSINESS level first (brief, zero technical vocabulary), gates on your approval, creates the ticket in the tracker (or runs without one), then designs the high-level architecture (which micro, which tables, sync/async/cron), gates again — and each gate closes with a two-line business + technical recap. Once the architecture is approved it chains into implementation and runs unattended to green PRs when the session can write (with or without --auto), else it stops with a relaunch line. Guided product mode (--audience product, PIT_CREW_AUDIENCE) is for non-technical people: Pit Crew takes the technical decisions and sends big ones to IT ("guided mode"). Tambien en espanol: "modo producto", "modo guiado", "no soy técnico", "arranca una feature", "planeemos esto", "discutamos el negocio primero", "corre todo solo hasta la PR", "fix this bug", "arreglemos este bug".
+
+**Arguments:** `[what you want to build — or an existing state.json path to resume] [--auto] [--no-triage] [--tracker <provider>] [--audience dev|product]`
+
+## `/pit-crew:dev`
+
+Phase 2/3. Implements approved work, runs affected tests, reviews by risk, checks acceptance criteria, and continues into the full test/PR/DEV phase. Triggers on implementalo, continue development, code and review.
+
+**Arguments:** `[path to state.json — defaults to the most recent one]`
+
+## `/pit-crew:test`
+
+Phase 3/3. Runs the test scope the change earned, opens PRs, verifies relevant behavior in DEV, resolves actionable feedback, reports results and cleans up. Usually follows pit-crew dev. Tambien en espanol: corre los tests, levanta las PRs, verifica en DEV.
+
+**Arguments:** `[path to state.json — defaults to the most recent one]`
+
+## `/pit-crew:deploy`
+
+Phase 4, manual only, never auto-chained. Merges the run's approved PRs one at a time and drives each service's prd rollout to completion — busy check, freeze check, version confirmation, canary loop that advances on clean observed signals, rollback detection. With --driver human the person merges and advances each step while it monitors and recommends. Invoked by hand once every PR is approved: deployá esto, deploy this run.
+
+**Arguments:** `[path to state.json] [--driver human|agent]`
+
+## Manual-only skills you invoke like a command
+
+Two skills run only when you type them: `/pit-crew:setup` ([Setup](../../getting-started/setup/)) and `/pit-crew:brainstorm` ([Brainstorm](../../how-it-works/brainstorm/)). They are listed in [Skills](../skills/).
+
+---
+
+<small>Generated from pit-crew `42bde34` (core 6.1.0) by `scripts/gen-reference.mjs`. Do not edit by hand.</small>

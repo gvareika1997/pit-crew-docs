@@ -1,0 +1,83 @@
+---
+title: Pit Crew
+description: A four-phase feature delivery pipeline for Claude Code. You approve the plan; the agents do the rest.
+template: splash
+hero:
+  tagline: From a ticket to a reviewed, verified pull request. You approve the plan; the agents do the rest.
+  image:
+    file: ../../assets/pit-crew-sticker.svg
+    alt: Pit Crew sticker
+  actions:
+    - text: Install
+      link: getting-started/install/
+      icon: right-arrow
+    - text: Your first run
+      link: getting-started/first-run/
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+import Video from '../../components/Video.astro';
+import banner from '../../assets/pit-crew-banner.svg';
+
+<img class="banner-img" src={banner.src} alt="Pit Crew: the dev at the wheel, the agents in the pit" />
+
+**4 phase commands · 16 skills · 16 agents · 9 roles you connect · no telemetry by default**
+
+## Start here
+
+| If you… | Go to |
+|---|---|
+| have never installed it | [Install](getting-started/install/) |
+| installed it and want to ship something | [Your first run](getting-started/first-run/) |
+| want to see it before you read | [Videos](getting-started/videos/) |
+| want to know why it works this way | [Why Pit Crew](how-it-works/why/) |
+| want the whole run on one page | [The flow](how-it-works/the-flow/) |
+| have a bug, not a feature | [Bug triage](how-it-works/triage/) |
+| are not a developer | [Product mode](how-it-works/product-mode/) |
+| want it to read your tracker, logs or test environment | [Roles and bindings](roles/) |
+| want one install for your whole team | [Packs](packs/) |
+| need the exact name of a command, skill or agent | [Reference](reference/commands/) |
+
+## The one-paragraph version
+
+Pit Crew is a Claude Code plugin that delivers a feature through four phases, for any repo, any stack and any toolset. You decide before any code is written: once on the business, once on the architecture. If the session can write, the run then goes unattended. It implements in a worktree, runs the affected tests, puts an adversarial judge on the whole diff, opens the pull requests, verifies the acceptance criteria and resolves review comments. It stops at PR links and never merges. Deploy is a separate command that only you start.
+
+| Phase | Command | What happens |
+|---|---|---|
+| [1 · plan](how-it-works/plan/) | `/pit-crew:plan` | Business gate, then architecture gate. The only two human gates of a `full` run |
+| [2 · dev](how-it-works/dev/) | `/pit-crew:dev` | Implement, run the affected tests, review, adversarial judge |
+| [3 · test](how-it-works/test/) | `/pit-crew:test` | Scoped tests, pre-push review, pull requests, verification in DEV, review comments |
+| [4 · deploy](how-it-works/deploy/) | `/pit-crew:deploy` | Manual only. Merges the approved PRs one at a time and drives the production rollout |
+
+## See a run
+
+<Video name="pit-crew-for-engineers" title="Pit Crew for engineers" />
+
+*5:48, for engineers. Recorded on version 5, before the open core: the tools it shows are now roles you connect. More in [Videos](getting-started/videos/).*
+
+## An open core
+
+<CardGrid>
+  <Card title="No company tool inside" icon="puzzle">
+    A tracker, a knowledge base, a test environment, logs, a database, review bots and a deploy tool are [roles](roles/) you connect. The core names none of them.
+  </Card>
+  <Card title="Works with nothing connected" icon="rocket">
+    With every role off it still plans with two gates, implements in a worktree, runs the affected tests, reviews and opens the PRs.
+  </Card>
+  <Card title="Packs" icon="open-book">
+    A [pack](packs/) is a second plugin that connects one organisation's tools in one install.
+  </Card>
+  <Card title="No telemetry by default" icon="approve-check">
+    Nothing is queued or sent unless you name a collector. [What is sent when it is on](roles/telemetry/).
+  </Card>
+</CardGrid>
+
+## What it never does
+
+- Never merges a PR on its own. Only `/pit-crew:deploy`, invoked by you, merges, and only the PRs of that run.
+- Never merges with `--admin` and never force-pushes. A branch behind `main` is merged forward.
+- Never writes to production outside `/pit-crew:deploy`. Everywhere else production is read-only for every agent.
+- Never closes green with a criterion it could not prove. That criterion is reported as not tested.
+
+How these are enforced: [Guardrails](how-it-works/guardrails/).

@@ -1,0 +1,34 @@
+---
+title: "Hooks (10)"
+description: "The guards Pit Crew registers in Claude Code, and what each one blocks."
+---
+
+Hooks are the part of Pit Crew that does not depend on the model following instructions. A guard runs before a tool call and denies it. What they protect, in plain terms: [Guardrails](../../how-it-works/guardrails/).
+
+| Script | Event | Runs on | What its header says |
+|---|---|---|---|
+| `mvn-pipe-guard.sh` | PreToolUse | `Bash` | PreToolUse/Bash guard of the `java-maven` stack (adapters/stack/java-maven/guide.md §Build) — enforces its build discipline mechanically instead of asking the model to remember it. Inert for any command that does not call Maven. |
+| `git-push-guard.sh` | PreToolUse | `Bash` | PreToolUse/Bash guard — a rewritten history and a skipped pre-push hook are the two mistakes in this pipeline that a later phase cannot undo, so they are denied mechanically instead of being left as rules the model has to remember mid-run. |
+| `test-scope-guard.sh` | PreToolUse | `Bash` | PreToolUse/Bash guard of the `java-maven` and `ui` stacks (adapters/stack/ java-maven/guide.md §Tests, adapters/stack/node/guide.md §Build, test and lint) — enforces the pit-crew test-scope discipline mechanically instead of asking the model to remember it every phase 3. Inert for any command that calls neither Maven nor Playwright: another stack keeps the rule by itself. |
+| `gh-merge-guard.sh` | PreToolUse | `Bash` | PreToolUse/Bash guard — the deploy phase's whole authorization is "merge exactly the head SHA of the PRs in state.prs, through the repo's own rules". A few ways around that boundary are denied mechanically instead of being left as rules the model has to remember mid-run: gh pr merge --admin                    (bypasses required checks and reviews) gh pr merge &lt;n&gt; ... (no --match-head-commit)   (merges whatever HEAD is now, not the sha a human actually approved) gh api ... pulls/&lt;n&gt;/merge             (the same merge, through the REST endpoint directly, sidestepping both flags above) gh api graphql ... mergePullRequest \| enablePullRequestAutoMerge   (the same merge, through GraphQL, inline or from a file the hook cannot read) A repo flag anywhere among the flags (`gh -R o/r pr merge`, `gh pr -R o/r merge`, `gh --repo o/r api ...`) is read the same as one after the subcommand. |
+| `readonly-role-guard.cjs` | PreToolUse | `Bash|Write|Edit|NotebookEdit` | PreToolUse guard for the read-only roles: the two testing roles, df-case-designer and df-dev-tester, and the review/research roles df-judge, df-judge-recheck, df-standards, df-investigator and df-scout (git and gh reads, scratch writes under tmp/ of the run folder, no remote shell, no remote write; the judges keep their focused tests, which the guard never blocked). The testing roles cannot write DEV, a database, git, GitHub, the cluster or AWS, nor any file outside what each needs in the run's state dir (the tester: results/tester-*.json, tmp/, browser/, artifact/evidence/; the case designer: only results/case-designer-*.json, and no network client at all: curl, wget, dig, nslookup, host, ssh, scp, sftp, telnet, openssl, nc). The agent files used to say so in prose; this makes it a mechanism. The configurator keeps its DEV writes and is not matched. |
+| `role-tool-guard.cjs` | PreToolUse | `mcp__.*` | PreToolUse guard for MCP calls: a pipeline agent (df-*) may call only the MCP tools bound to a role it holds, at the access it holds. The rule and the role table live in scripts/roles.cjs (`toolAllowed`, `AGENT_ROLES`); this hook only applies them. Role agents carry no `tools:` allowlist, so this guard is their MCP grant. |
+| `role-tool-guard.cjs` | PreToolUse | `Bash|Write|Edit|NotebookEdit` | PreToolUse guard for MCP calls: a pipeline agent (df-*) may call only the MCP tools bound to a role it holds, at the access it holds. The rule and the role table live in scripts/roles.cjs (`toolAllowed`, `AGENT_ROLES`); this hook only applies them. Role agents carry no `tools:` allowlist, so this guard is their MCP grant. |
+| `plan-page-gate-guard.cjs` | PreToolUse | `AskUserQuestion` | PreToolUse/AskUserQuestion guard — the plan page is published before Gate 1c, and the gate carries its link, so the human reads the page before approving (skills/artifact). |
+| `telemetry-hook.cjs` | PreToolUse | `AskUserQuestion` | pit-crew telemetry hook: one entry point for every event it listens to. |
+| `telemetry-hook.cjs` | PreToolUse | `Agent|Task` | pit-crew telemetry hook: one entry point for every event it listens to. |
+| `grant-digest.cjs` | PreToolUse | `Agent|Task` | grant-digest — records, once per session, a keyed digest of every file roles.cjs resolve() builds the MCP grants from, so hooks/role-tool-guard.cjs can refuse a pipeline agent's MCP call when one of them changed mid-session. The guard's Bash and Write checks only make such a write harder; this record is what catches one that got through (a path built from shell variables, say). |
+| `telemetry-hook.cjs` | PostToolUse | `Bash` | pit-crew telemetry hook: one entry point for every event it listens to. |
+| `telemetry-hook.cjs` | PostToolUse | `AskUserQuestion` | pit-crew telemetry hook: one entry point for every event it listens to. |
+| `telemetry-hook.cjs` | PostToolUse | `Write` | pit-crew telemetry hook: one entry point for every event it listens to. |
+| `telemetry-hook.cjs` | PostToolUseFailure | every call | pit-crew telemetry hook: one entry point for every event it listens to. |
+| `telemetry-hook.cjs` | SubagentStart | every call | pit-crew telemetry hook: one entry point for every event it listens to. |
+| `telemetry-hook.cjs` | SubagentStop | every call | pit-crew telemetry hook: one entry point for every event it listens to. |
+| `subagent-result-guard.cjs` | SubagentStop | every call | SubagentStop guard: a pit-crew agent that owes a closing envelope must not end its turn without one. A turn that ends while the agent "waits" (CI, bots, a deploy) leaves the orchestrator with nothing to register. |
+| `telemetry-hook.cjs` | Stop | every call | pit-crew telemetry hook: one entry point for every event it listens to. |
+| `grant-digest.cjs` | SessionStart | every call | grant-digest — records, once per session, a keyed digest of every file roles.cjs resolve() builds the MCP grants from, so hooks/role-tool-guard.cjs can refuse a pipeline agent's MCP call when one of them changed mid-session. The guard's Bash and Write checks only make such a write harder; this record is what catches one that got through (a path built from shell variables, say). |
+| `telemetry-hook.cjs` | UserPromptSubmit | every call | pit-crew telemetry hook: one entry point for every event it listens to. |
+
+---
+
+<small>Generated from pit-crew `42bde34` (core 6.1.0) by `scripts/gen-reference.mjs`. Do not edit by hand.</small>

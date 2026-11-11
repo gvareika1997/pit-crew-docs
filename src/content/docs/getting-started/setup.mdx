@@ -1,0 +1,122 @@
+---
+title: Setup and health check
+description: What /pit-crew:setup checks, what it proposes to remove, how it handles credentials and how to restore what it removed.
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+```text
+/pit-crew:setup
+```
+
+Run it once on a new machine, and again whenever you want a health check. It runs only when you type it. No phase command starts it or depends on it, and a run works without it.
+
+It never touches your `CLAUDE.md`, your permission rules or your hooks. It never asks for a credential value, and it never prints one.
+
+## What happens
+
+<Steps>
+
+1. **Inventory.** It shows what Pit Crew needs and what you have, before it changes anything.
+2. **Interrupted work.** If an earlier cleanup was cut short, it asks whether to continue or discard it.
+3. **Proposal.** It lists the user-scope MCP servers and plugins it would remove, with one reason each.
+4. **One decision.** You accept the list, with exclusions, or decide item by item. Nothing is removed before you confirm.
+5. **Apply.** It removes only what you confirmed, and saves a copy of each item first.
+6. **Credentials.** It names each missing variable and where it goes. You type the value yourself.
+7. **Tracker and knowledge base.** It explains how to connect them and confirms each with one read-only call.
+8. **Companion plugins.** It offers three optional plugins, one question each.
+9. **Summary.** It ends with what was done, what is still pending for you, and where the backup is.
+
+</Steps>
+
+## Reading the inventory
+
+Each thing Pit Crew needs gets one status:
+
+| Status | Meaning | What to do |
+|---|---|---|
+| present | Installed and working | Nothing |
+| missing | Not installed | Follow the fix line it prints |
+| needs action | Installed, but something is missing, such as a credential | Follow the fix line it prints |
+| `off` (a role) | No tool is connected to that role | Nothing. It is shown as information, not as a fault. The run skips that step and records it |
+| unknown | The status check itself could not run | Read the reason it gives. Every unknown comes from that failure, not from a missing tool |
+
+The inventory covers the CLIs, the roles with the MCP servers bound to them, their credentials and the optional plugins. It also lists your installed packs. An empty pack list means every role is off unless your own config binds it.
+
+Two more lines check that updates can arrive:
+
+| Line | Fine | Needs your fix |
+|---|---|---|
+| Marketplace auto-update | `on` | `off`: it prints the fix for you to run |
+| Read access to the marketplace's git remote | `yes` | `no`: it prints the fix for you to run |
+
+`unverified` and `not_applicable` on either line are not errors. Setup never runs these fixes for you: it shows them, and you run them.
+
+For a missing CLI whose fix needs no credential, it offers to run the fix on your yes. A fix that needs a login or a credential stays your step.
+
+## What it proposes to remove
+
+It proposes a user-scope MCP server or plugin for one of two reasons:
+
+- Pit Crew does not use it.
+- It shadows a server a pack bundles.
+
+It keeps the core, your installed packs, its optional plugins, and the plugins and servers Pit Crew uses. With an empty proposal it says your config is already clean and skips the question. Connectors you added on claude.ai are listed, but setup cannot remove them.
+
+If your config format is not recognised, it says so and removes nothing. The rest of the check still runs.
+
+:::caution[A shadowing server]
+When your own copy of a server has the same name as one a pack bundles, Claude Code loads your copy and drops the pack's. Every Pit Crew agent then loses those tools. Before setup removes your copy, move its token into the variable it names. The removal is refused until that variable is loaded.
+:::
+
+## Credentials
+
+For each missing credential, setup tells you three things:
+
+- the exact variable, and that it goes in the `env` block of `~/.claude/settings.json`;
+- how to obtain it, from the setup notes of the pack that bundles the server. A pack with no notes gets the variable name only: its owner issues it;
+- that you type the value yourself.
+
+Afterwards it checks that the variable is set, and whether you still need to restart. It reads yes or no only, never the value.
+
+## Companion plugins
+
+| Plugin | Offer |
+|---|---|
+| RTK | Recommended |
+| caveman | Optional |
+| context-mode | Optional |
+
+Each one comes in its own question, with its benefit, its source repository and its license. A plugin's code runs with your privileges, so install only on a yes. After RTK installs, run `rtk init -g` yourself: it registers a hook, and setup never touches your hooks.
+
+## Restore something it removed
+
+Backups live in `~/.claude/pit-crew/_setup/backup-<timestamp>/`, one file per item. Only you can read them, because a server entry can hold a token.
+
+The simplest way is to ask: **"restore what the setup removed"**. Setup lists the backed-up items by name and asks which one. A restored plugin is reinstalled from its marketplace.
+
+You can also run the restore yourself:
+
+```bash
+node ~/.claude/plugins/cache/<marketplace>/pit-crew/<version>/scripts/setup.cjs restore --item mcp:<name>
+```
+
+Use `--item plugin:<name>@<marketplace>` for a plugin.
+
+:::caution[A token in a restored server]
+Restoring a server passes its saved entry to `claude mcp add-json` as an argument. A token in it is briefly visible to other local users in `ps`. Move tokens into `env` variables first.
+:::
+
+## If setup was interrupted
+
+The next run picks it up. It lists the items still pending and the ones already backed up, then asks:
+
+- **Continue**: it re-checks that each item is still there, then removes it.
+- **Discard**: nothing more is removed. The backups stay.
+
+Nothing is ever removed without its backup. If the record of the interrupted work cannot be read, setup says where it is and removes nothing until you check it or move it aside.
+
+## Next
+
+- [Your first run](../first-run/)
+- [Connect your tools](../connect-your-tools/)

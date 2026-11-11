@@ -1,0 +1,122 @@
+---
+title: Roles and bindings
+description: How Pit Crew names the jobs external tools do, and how you tell it which of your tools fills each one.
+---
+
+Pit Crew calls no tool by name. Each step of a run names a **role** and a **verb**. A role is a job an external tool does, such as reading a ticket or querying logs. A verb is one call inside that job, such as `get` or `query`. Your installation says which tool fills each verb. That mapping is a **binding**.
+
+With nothing bound, the pipeline still runs. Every role is off except `stack`. A step that needs an absent role is skipped and recorded, never faked. The report then says what was not tested.
+
+## The nine roles
+
+| Role | What it does for a run | When it is off |
+|---|---|---|
+| [`tracker`](./tracker/) | reads and creates the ticket | the run has no ticket |
+| [`docs`](./docs/) | looks up company knowledge | no knowledge lookup; terms come from the repo alone |
+| [`env`](./env/) | brings up and drives the test environment | verification is local, or each criterion is reported as not tested |
+| [`logs`](./logs/) | queries service logs | evidence comes from the service's own output |
+| [`data`](./data/) | reads and writes test data | no row corroboration and no data fixture |
+| [`review`](./review/) | names the bots that review a PR | the PR waits on no bot; the internal judge and the standards pass are the review |
+| [`deploy`](./deploy/) | observes and advances a production rollout | `/pit-crew:deploy` merges and stops |
+| [`events`](./events/) | receives usage events | nothing is queued or sent |
+| [`stack`](./stack/) | builds and tests a repo | never off: the `generic` adapter runs the commands the repo declares |
+
+You bind only the verbs your tool has. A verb with no binding makes that one step unavailable. The rest of the role keeps working.
+
+**Required verbs.** Two roles name a minimal set. `env` needs `up`, `status`, `request` and `down`. `deploy` needs `rollout_status` and `deploys`. A binding without one of them still works, but the role shows as `partial`. Every other verb of every role is optional.
+
+## Where bindings live
+
+Bindings come from four layers. A higher layer wins.
+
+| Layer | File | What it may set |
+|---|---|---|
+| core defaults | none | every role off; `stack` is `generic` |
+| packs, in name order | `pack.json` inside each pack | any role |
+| you or your organisation | `~/.claude/pit-crew/config.json`, or the file `PIT_CREW_CONFIG` names | any role |
+| one repo | `.pit-crew/config.json` at the repo root | `stack`; for `env` only `settings` and `enabled: false` |
+
+The repo layer is limited on purpose. That file arrives with the branch, so it can never name a tool id, a server or an env adapter. Pit Crew ignores those fields there and warns.
+
+A layer sets a role by key. Scalar fields (`enabled`, `adapter`, `guide`, `server`) replace the lower value. `tools` and `settings` merge key by key. A key set to `null` is removed. A role a layer does not mention keeps its lower value.
+
+Packs are found in this order. `PIT_CREW_PACKS` (a path list) wins when it is set. Otherwise Pit Crew reads the `packs` list in your user config. Only when that list is absent or empty does it read the registry that installed packs write. See [Packs](../packs/) for how a pack is built.
+
+## The binding format
+
+Every file has one top-level key, `roles`, with one entry per role:
+
+```json
+{
+  "roles": {
+    "logs": {
+      "enabled": true,
+      "adapter": "grafana-loki",
+      "guide": "adapters/logs/my-guide.md",
+      "server": "grafana",
+      "tools": {
+        "query": "mcp__grafana__query_loki_logs",
+        "query_prod": { "id": "mcp__grafana-prod__query_loki_logs", "access": "read" }
+      },
+      "settings": { "datasource_uid": "loki-dev" }
+    }
+  }
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `enabled` | `true` or `false`. Naming an `adapter` turns the role on, so write it mainly to turn a role off in a higher layer. |
+| `adapter` | the name of the guide that explains the tool. Required for every role except `events` and `review`, which work from `settings` alone. A role that is on with no adapter resolves off, with a warning. |
+| `guide` | optional path to the guide, relative to the file's own directory. Without it, Pit Crew looks up the guide by adapter name, first next to your file, then among the adapters that ship with the plugin. |
+| `server` | the name of the MCP server the tools come from. |
+| `tools` | verb to tool id. A plain string means `access: "read"`. The long form is an object with `id` and `access`. An id may end in `*` to cover every tool of a server. |
+| `settings` | the values the guide asks for: a team, a datasource uid, a host pattern. Each role page lists them. |
+
+Copy tool ids from your own session (`/mcp` lists them). You add the MCP servers themselves the usual way, with `claude mcp add`. The config file only says which tool fills which verb.
+
+## Access levels
+
+The pipeline's agents hold fixed roles. A hook denies an agent any MCP tool outside the roles it holds. The `access` field decides who may call a bound tool.
+
+| Access | Who may call it |
+|---|---|
+| `read` | every agent that holds the role |
+| `write` | only an agent that holds the role with write access, such as the agent that prepares test data, or one granted that verb by name |
+| `orchestrator` | the main session only. Use it for a destroy or a rollout action. |
+
+The hook does not restrict the main session. Your own permission rules still apply to it. A denied call is a dispatch error to report, not a tool failure to retry.
+
+## Check the result
+
+Run `roles.cjs` from the plugin folder. That is `plugins/pit-crew` in a clone, or the installed copy under `~/.claude/plugins/cache/`.
+
+```bash
+node scripts/roles.cjs                      # every role
+node scripts/roles.cjs --role logs          # one role
+node scripts/roles.cjs --repo /path/to/repo # adds that repo's stack and env
+node scripts/roles.cjs --agent df-investigator   # adds the tool ids that agent may call
+node scripts/roles.cjs stack --kind other --repo /path/to/repo   # one repo's stack
+```
+
+Read these fields in the output:
+
+| Field | What to look for |
+|---|---|
+| `contract` | `roles/v1`. The output only gains fields between versions. |
+| `source` | which layer last set the role: `core`, `pack:<name>`, `config:user` or `config:repo` |
+| `status` | `on`, `off` or `partial`. `partial` means on with a required verb missing, listed in `missing_verbs`. |
+| `guide` | an absolute path to a file that exists |
+| `warnings` | empty. An unreadable file, an unknown role, a role on with no adapter and an adapter with no guide each show up here. |
+| `granted` | with `--agent`, the tool ids that agent may call |
+
+A warning never stops a run. Pit Crew continues without the part it could not load.
+
+:::tip[A repo that cannot run without a role]
+A repo can list the roles it needs in its `.pit-crew/config.json`, for example `{ "requires": ["tracker", "env", "logs"] }`. Preflight then reports each one that is off as fatal, with the fix: install or list the pack that binds it. A `partial` one is reported as degraded.
+:::
+
+## Next
+
+- [Connect your tools](../getting-started/connect-your-tools/)
+- [Write an adapter](./write-an-adapter/)

@@ -1,0 +1,18 @@
+---
+// A self-hosted video from public/video/, with its poster. Paths respect the site base.
+interface Props {
+  name: string;
+  title: string;
+}
+const { name, title } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<video
+  controls
+  preload="metadata"
+  poster={`${base}/video/${name}.jpg`}
+  src={`${base}/video/${name}.mp4`}
+  title={title}
+  style="width: 100%; border-radius: 8px; background: #0b0b10;"
+></video>

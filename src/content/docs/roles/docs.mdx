@@ -1,0 +1,57 @@
+---
+title: docs
+description: The role that looks up company knowledge before the business draft.
+---
+
+The `docs` role lets a run read your company's knowledge base. The lookup happens before the business draft, so the plan uses your own terms. When a page contradicts what the run finds, the role can also fix or flag that page.
+
+## Verbs
+
+All verbs are optional.
+
+| Verb | What it is for |
+|---|---|
+| `search` | find pages by words |
+| `fetch` | read one page, starting with the entry guide |
+| `update` | write a fix to a page that drifted from the truth |
+| `comment` | leave a comment on the page it fixed |
+
+## Adapters that ship
+
+| Adapter | What the guide covers | Settings it reads |
+|---|---|---|
+| `notion` | a Notion workspace. Search goes one teamspace at a time. A drift fix edits one block, comments on it, then re-reads it to verify. It creates a page only after your explicit yes. | `entry_url`, `spaces`, `connector_prefix`, `server_host` |
+| `repo-markdown` | markdown files in a git repository. No MCP tool. It reads the published branch, never your working tree. Carries `search` and `fetch`. | `root`, `entry_url`, `spaces`, `base` |
+
+Two safety rules matter here:
+
+- **The `notion` adapter checks where a tool comes from.** It accepts only a tool whose id starts with `connector_prefix`, or a server whose URL host is exactly `server_host`. A server named like Notion is never trusted by its name.
+- **The `repo-markdown` adapter never writes your knowledge.** A drift fix becomes a proposed diff file. The report names it, and you apply and commit it. If you say **"apply it"**, the change goes on its own branch and PR, never straight to the base branch.
+
+## Minimal config
+
+```json
+{
+  "roles": {
+    "docs": {
+      "adapter": "repo-markdown",
+      "settings": {
+        "root": "/home/me/handbook",
+        "entry_url": "README.md",
+        "base": "main"
+      }
+    }
+  }
+}
+```
+
+Without `entry_url`, the lookup is `unavailable` with the reason `entry_url not set`.
+
+## When it is off
+
+There is no knowledge lookup. Terms come from the repo alone. The same happens when no tool passes the `notion` source check.
+
+## Next
+
+- [env](../env/)
+- [Plan](../../how-it-works/plan/)

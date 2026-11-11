@@ -1,0 +1,17 @@
+/* Accent taken from the pit-crew sticker: racing red on a dark pit. */
+:root {
+  --sl-color-accent-low: #3d1210;
+  --sl-color-accent: #e10600;
+  --sl-color-accent-high: #f7c1bc;
+  --sl-content-width: 46rem;
+}
+:root[data-theme='light'] {
+  --sl-color-accent-low: #fbe0dd;
+  --sl-color-accent: #b3261c;
+  --sl-color-accent-high: #5c120d;
+}
+.banner-img {
+  width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+}

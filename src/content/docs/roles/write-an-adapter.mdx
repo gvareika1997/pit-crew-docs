@@ -1,0 +1,59 @@
+---
+title: Write an adapter
+description: How to teach Pit Crew to use a tool that no shipped adapter covers.
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+Your tracker, log store or deploy tool has no shipped adapter. You write one. An adapter is one Markdown file that tells an agent how your tool fills a role. It names verbs and settings, never a value of your company.
+
+An agent reads the file once, before its first call to the role. So write steps it can follow, with the exact arguments and the result that proves a call worked.
+
+## Steps
+
+<Steps>
+
+1. Copy the template [`adapters/TEMPLATE.md`](https://github.com/gvareika1997/pit-crew/blob/main/plugins/pit-crew/adapters/TEMPLATE.md) to `adapters/<role>/<name>.md` beside your config file. For a user config that is `~/.claude/pit-crew/adapters/<role>/<name>.md`. For a pack, put it inside the pack.
+
+2. Fill one section per verb your tool supports. Leave out the verbs it lacks: an unbound verb is unavailable, and the step that needs it is skipped and recorded.
+
+3. Move every value that differs between companies to `settings`. A host, a team, an id or a ticket prefix is a setting. Name each setting in the guide.
+
+4. Bind it in your config: `"adapter": "<name>"`, plus `tools` and `settings`.
+
+5. Run `node scripts/roles.cjs --role <role>` from the plugin folder. Check that `guide` points at your file and `warnings` is empty.
+
+</Steps>
+
+## What the template asks for
+
+| Section | What you write |
+|---|---|
+| What this role is here | one or two sentences: what the tool is, which job it does, what replaces it when it is absent |
+| Verbs | one section per verb, each with four lines: **Tool**, **Arguments**, **Returns**, **Done when** |
+| Settings it reads | a table of setting, meaning and what happens when it is absent |
+| Limits and gotchas | sizes, rates and time limits with numbers, surprising behaviours, and what to do on the common failure |
+| What it cannot do | the verbs the tool has no call for, and the actions that stay with a person, such as a permission, a secret or a production write |
+
+For each verb, the **Done when** line names an observable result: a status, a row count, an id returned. For each setting, the **When absent** column says whether the run asks once or skips the step.
+
+:::tip[Tool ids come from the binding]
+The guide never names a tool id from memory. The agent reads the id from the `roles.cjs` output, so the same guide works for any server name.
+:::
+
+## A tool with no MCP server
+
+Some adapters run shell commands instead of MCP tools, like the shipped `github-issues` or `local`. In that case `tools` stays empty. For a pack's own adapter, declare the shell verbs in `pack.json`, so required verbs count as present:
+
+```json
+{ "adapters": { "env": { "my-env": { "verbs": ["up", "status", "request", "down"] } } } }
+```
+
+## Look at a shipped one first
+
+The shipped guides are good models. `adapters/logs/local.md` is short. `adapters/deploy/github-actions.md` shows how to state plainly what a tool cannot observe. The full list is in `adapters/index.json`.
+
+## Next
+
+- [Roles and bindings](../)
+- [Write a pack](../../packs/write-a-pack/)

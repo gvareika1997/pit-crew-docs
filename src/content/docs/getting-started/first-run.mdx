@@ -1,0 +1,167 @@
+---
+title: Your first run
+description: Start a run from a ticket or a prompt, approve the plan, and get back verified pull request links.
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+
+A run starts with one command and asks you to decide before any code is written. After that it works alone until the pull requests are open.
+
+## Start a run
+
+Open Claude Code in the repo you want to change, then start from a ticket or from a prompt:
+
+```text
+/pit-crew:plan ABC-1234
+/pit-crew:plan "add a currency filter to the payouts list"
+```
+
+The ticket form needs the `tracker` role connected. The prompt form works with nothing connected.
+
+<Aside type="tip" title="Write a precise prompt">
+Say what, where and for whom. "Integrate provider X in service Y to process payins in countries Z" works. "Integrate X" does not.
+</Aside>
+
+## What happens next
+
+<Steps>
+
+1. **The run recaps what it understood.**
+
+   The first message opens with a recap of three to five lines. Correct it there.
+
+2. **It asks what kind of task this is.**
+
+   | Lane | Gates | Use it for |
+   |---|---|---|
+   | `full` | business + architecture | features, anything with a design to discuss |
+   | `quick` | one | small, clear changes |
+   | `hotfix` | one | urgent fixes. It cuts `hotfix/<id>` and opens a follow-up ticket |
+
+3. **You approve the business description.**
+
+   This is the first gate. The description has no technical vocabulary.
+
+4. **You approve the architecture.**
+
+   This is the second gate, and the last human step before the PRs. Each gate closes with a two-line recap, one business line and one technical line. The final report repeats those lines word for word.
+
+5. **The run implements, tests and reviews.**
+
+   It works in a worktree, runs the affected tests, and an adversarial judge attacks the whole diff before anything is pushed.
+
+6. **It opens the pull requests and verifies them.**
+
+   It runs the pre-push review, opens the PRs, verifies the acceptance criteria in DEV when the `env` role is connected, and resolves review comments.
+
+7. **You get the PR links and a report.**
+
+   The run ends here. It never merges.
+
+</Steps>
+
+<Aside type="note" title="Started in plan mode?">
+The run continues past the architecture gate only if the session can write. If it cannot, the run prints the line to relaunch it with open permissions.
+</Aside>
+
+## What to say at each gate
+
+Every question follows the same shape. The recommended option comes first, marked **(Recommended)**, with one line on why. The last option is always **"I don't understand"**. Pick it and the run explains that question again with an example from your request, then asks it again. Nothing is recorded until you answer.
+
+The run asks only real questions: two reasonable answers that lead to different code or design, which the code, the data or the conversation cannot settle. It looks facts up instead of asking them. Zero questions is a valid outcome.
+
+Anything you add mid-run gets one line in the next reply: what it changes, or why it changes nothing.
+
+### Business gate
+
+You see the business description, at most one page, with no technical vocabulary. Before it, the open questions come in rounds. Each round asks every question whose prerequisites are settled, easiest first.
+
+Above the approval question sits a **Closed without asking** block. Each line is a point the run decided on its own, with its source: a line of code, data, your own words or an earlier decision. A ticket is never a source. Its claims are treated as hypotheses to verify.
+
+What to answer:
+
+- **Read the Closed without asking block.** Approving the gate confirms every line in it.
+- **Use "Approve except…"** to name a line you disagree with. It is reopened as a real question before approval.
+- **Answer edge scenarios honestly.** The run may describe one concrete case and ask what should happen. If you cannot answer, that is a finding, not a failure.
+- **Keep technical choices for later.** If you say which service or table to use, the run notes it and steers back to business.
+- **Say "just do it"** if you want its defaults. It still shows you one confirm round, so nothing is assumed unseen.
+
+If you change an answer later, only the points that depend on it are asked again.
+
+### Architecture gate
+
+You see a decision table: which repos and services change, and how. Open design decisions are asked before the table, so the table shows answers, not options. Points closed at the business gate are not asked again.
+
+When the change needs one, the question carries a link to the plan page. Read it first. Under the table you see what the preflight could not provide, and which checks will be reported as not tested because of it. Then the two-line recap.
+
+What to answer:
+
+- **Check the not-tested list.** If a check matters to you, connect the missing role before you approve.
+- **Push back with a concrete alternative.** The run is told to do the same when a design is weak.
+- **Approve only when you would ship it.** After this gate there is no human step until the PR links.
+
+In the `quick` and `hotfix` lanes this is the only gate, and its recap names the lane. A `quick` run that touches money first shows what quick gives up: no separate plan gate, no architect, no adversarial judge. It then asks **Continue in Quick** or **Switch to Full**.
+
+## A bug instead of a feature
+
+A bug is triaged before it is planned. The triage is read-only and ends in a root cause. It may also conclude that the report is not a bug. In that case the run stops and asks whether to close with a reply for the reporter, continue as a feature, or continue anyway.
+
+You can paste a raw report from someone else, such as a chat thread, as it is.
+
+## Resume a run
+
+The state of a run lives outside every repo:
+
+```text
+~/.claude/pit-crew/<slug>/state.json
+```
+
+It survives a context compact and a closed session. To resume, give the path to the phase command:
+
+```text
+/pit-crew:plan ~/.claude/pit-crew/abc-1234/state.json
+```
+
+`/pit-crew:dev` and `/pit-crew:test` take the same path, and default to the most recent run when you give none.
+
+## Deploy
+
+Deploy is a separate, manual phase. Run it yourself after a reviewer approves the PR:
+
+```text
+/pit-crew:deploy ~/.claude/pit-crew/abc-1234/state.json
+```
+
+The state path is required: the command never guesses the most recent run. Invoking it is the authorization to merge exactly the PRs of that run.
+
+<Aside type="caution">
+`/pit-crew:deploy` merges each PR into its base branch, usually your main branch, and advances the production rollout. Nothing else in Pit Crew writes to production.
+</Aside>
+
+## Set expectations honestly
+
+An unattended run gives you PR links with evidence. It does not give you a merged, released change, and it does not prove everything.
+
+What a run can show you:
+
+- the affected tests passed, and on a `full` run the judge attacked the whole diff before the push;
+- each acceptance criterion it could exercise in DEV, with raw evidence;
+- the review comments it resolved;
+- a compact report in `~/.claude/pit-crew/_reports/<slug>-<date>.md`.
+
+What it cannot prove:
+
+- **Phase 3 does not run the whole suite.** It runs the scope the router sized for each repo: touched code, the module, or the module plus end-to-end tests. CI owns the broad validation.
+- **A criterion that could not be proved is reported as not tested.** The run does not close green on it. With no `env` role, every criterion is reported as not tested.
+- **A hotfix verifies nothing in DEV.** Every case is not tested, with the reason "validate in prod", and the run closes incomplete by design.
+- **Fix loops cap at three.** A fourth attempt on the same red build or test is refused, and the run reports `blocked` with the log path.
+- **The run is only as good as the `CLAUDE.md` it reads.** A repo with no conventions file gets generic code.
+
+What stays with you:
+
+- **Merging.** Phase 3 never merges. Only `/pit-crew:deploy`, run by you, merges, and only the PRs of that run.
+- **DEV and staging verification of a deploy, aborting a rollout and creating a canary.** `/pit-crew:deploy` does none of these.
+
+## Next
+
+[Connect your tools](../connect-your-tools/), so a run can read your tracker, your logs and your test environment.

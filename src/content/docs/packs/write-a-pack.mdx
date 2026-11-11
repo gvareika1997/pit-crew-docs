@@ -1,0 +1,179 @@
+---
+title: Write a pack
+description: Build your organisation's pack from the minimal example, bind your tools role by role, check it and install it for your team.
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+Your team wants the same tracker, environment and logs in every run. This page builds the pack that carries them.
+
+## Where the pack lives
+
+| Choice | When | Trade-off |
+|---|---|---|
+| A fork of the Pit Crew repository, pack in `plugins/pit-crew-<company>/` | The default | Core and pack share one marketplace, so the dependency resolves with no extra setting. You take core updates with a plain `git merge` |
+| A pack contributed to the upstream repository | The maintainer gives your organisation write access | No fork to keep up to date. Everyone with access reads every pack, so your hosts and team ids are public to them |
+| A separate repository of your own | Your values must stay private and you do not want a fork | The core lives in another marketplace. Your marketplace must list it in `allowCrossMarketplaceDependenciesOn` |
+
+One rule keeps a fork painless: put everything of your company in `plugins/pit-crew-<company>/` and in your own marketplace entry. Do not edit `plugins/pit-crew/`. Send core changes upstream as a pull request instead. Then an upstream merge touches only files you never edit.
+
+## Build it
+
+<Steps>
+
+1. **Fork and add the upstream remote.**
+
+   ```bash
+   git clone https://github.com/<your-org>/pit-crew.git && cd pit-crew
+   git remote add upstream https://github.com/gvareika1997/pit-crew.git
+   ```
+
+   Keep the fork private if your pack will hold internal hosts or ids. In `.claude-plugin/marketplace.json`, set `owner` to your organisation and remove the entries you will not use. Done when `claude plugin validate .` passes at the repository root.
+
+2. **Copy the minimal pack.**
+
+   ```bash
+   cp -R examples/pack-minimal plugins/pit-crew-<company>
+   ```
+
+   In `.claude-plugin/plugin.json`, set `name` to `pit-crew-<company>` and write your own `description`. Keep the `dependencies` entry on `pit-crew`.
+
+   Keep `hooks/hooks.json` and `scripts/register.cjs`. On each session start they record where the pack is installed, so the core finds it after every update. The hook is fail-open: if it errors, nothing is written and the pack's roles show as off.
+
+3. **Edit `pack.json`.**
+
+   Keep `"schema": "pack.v1"` and the `core` range. Set `name` to `<company>` and `plugin` to `pit-crew-<company>`. This is the minimal example as it ships:
+
+   ```json
+   {
+     "schema": "pack.v1",
+     "core": ">=6.0.0 <7.0.0",
+     "name": "minimal",
+     "plugin": "pit-crew-pack-minimal",
+     "version": "0.1.0",
+     "description": "GitHub Issues, local Docker and local logs: every binding a shell adapter of the core, so the pack bundles no MCP server.",
+     "roles": {
+       "tracker": {
+         "adapter": "github-issues",
+         "settings": {
+           "provider": "github"
+         }
+       },
+       "env": {
+         "adapter": "local",
+         "settings": {
+           "routes": ["local"]
+         }
+       },
+       "logs": {
+         "adapter": "local"
+       }
+     }
+   }
+   ```
+
+4. **Add the marketplace entry.**
+
+   ```json
+   { "name": "pit-crew-<company>", "source": "./plugins/pit-crew-<company>", "version": "0.1.0", "category": "development", "strict": true }
+   ```
+
+5. **Bind your tools, one role at a time.** See the next section.
+
+6. **Check it, test it and open the pull request in your fork.** See [Check the pack](#check-the-pack).
+
+</Steps>
+
+## The fields of pack.json
+
+| Field | Required | Meaning |
+|---|---|---|
+| `schema` | yes | Always `pack.v1` |
+| `core` | yes | An npm-style semver range of the core versions you tested with |
+| `name` | yes | Lowercase letters, digits and dashes. Shows up as `pack:<name>` in the output |
+| `roles` | yes | One entry per role you bind, in the same format as a config file |
+| `plugin` | no | The plugin name the pack ships as. Bundled MCP tools are named after it |
+| `version`, `description` | no | Free text |
+| `adapters` | no | Verbs your own adapters run as shell commands, with no MCP tool |
+
+A role entry takes `enabled`, `adapter`, `guide`, `server`, `tools` and `settings`. Any other key fails the schema.
+
+## Bind your tools
+
+Fill `roles` for each tool you have, and leave out the rest. A role you leave out stays off: its step is skipped and recorded, and the run still works.
+
+| Role | What it answers | Start from |
+|---|---|---|
+| `tracker` | tickets: read, create, comment | core `linear`, `jira` or `github-issues`, or your tracker's MCP |
+| `docs` | the knowledge base the agents read | core `notion` or `repo-markdown`, or your docs MCP |
+| `env` | where a branch runs for DEV verification | core `local` (Docker Compose), or your platform's MCP |
+| `logs` | log queries for evidence | core `local` or `grafana-loki`, or your logs MCP |
+| `data` | read-only DEV database queries | core `sql-mcp` |
+| `review` | the review bots on the PR | core `github-bots` |
+| `deploy` | merge, rollout watch, freeze | core `github-actions`, or your deploy MCP |
+| `events` | telemetry, off unless you bind it | your collector URL |
+| `stack` | build and test commands per language | core `generic`, `java-maven`, `node`, `ui` |
+
+Keep these rules in mind:
+
+- `env` needs the verbs `up`, `status`, `request` and `down`. `deploy` needs `rollout_status` and `deploys`. A binding without them resolves as `partial`.
+- A relative `guide` resolves against the pack root.
+- Put company values in `settings`. Never put a token in `pack.json`: name the variable that holds it, for example `credential_env`.
+- A pack adapter whose verbs are shell commands declares them under `adapters`, so they count toward the required verbs.
+
+### Bundled MCP servers
+
+Servers the pack bundles go in `plugins/pit-crew-<company>/.mcp.json`. Their tool ids follow one pattern:
+
+```text
+mcp__plugin_pit-crew-<company>_<server>__<tool>
+```
+
+Use that id in `tools`. Each person still provides the credentials. List the variables in your pack's README, because `/pit-crew:setup` points people there.
+
+:::caution[A personal copy shadows the pack's server]
+If a person also has a user-scope server with the same name, Claude Code loads their copy and drops the pack's. Every agent then loses those tools. `/pit-crew:setup` flags it and offers to remove the copy.
+:::
+
+## Check the pack
+
+Run these from the repository root:
+
+```bash
+node plugins/pit-crew/scripts/schema_check.cjs plugins/pit-crew/schemas/pack.v1.schema.json plugins/pit-crew-<company>/pack.json
+PIT_CREW_PACKS=$PWD/plugins/pit-crew-<company> node plugins/pit-crew/scripts/roles.cjs
+```
+
+The first prints `"valid":true`. The second shows each role you bound as `on`, from `pack:<company>`, with `warnings: []`.
+
+Then run the core suite and the strict validator:
+
+```bash
+cd plugins/pit-crew && node --test tests/*.test.cjs
+claude plugin validate plugins/pit-crew-<company> --strict
+```
+
+## Make a repo require your roles
+
+A repo that must not ship without a role says so in `<repo>/.pit-crew/config.json`:
+
+```json
+{ "requires": ["tracker", "env", "logs"] }
+```
+
+A machine without your pack then fails the preflight loudly instead of skipping the step.
+
+## Take core updates
+
+```bash
+git fetch upstream
+git merge upstream/main
+cd plugins/pit-crew && node --test tests/*.test.cjs
+```
+
+Open the merge as a pull request in your fork. A new adapter for a widely used tool helps every company: send it upstream, with no value of your company in it.
+
+## Next
+
+- [Open core design](../open-core-design/)
+- [Write an adapter](../../roles/write-an-adapter/)

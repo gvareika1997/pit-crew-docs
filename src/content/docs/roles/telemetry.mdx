@@ -1,0 +1,85 @@
+---
+title: Telemetry
+description: What Pit Crew sends when you turn usage events on, what it never sends, and how to keep it off.
+---
+
+Pit Crew can send usage events about your runs to a collector you choose. **It is off by default.** With no configuration, nothing is queued and nothing is sent. The core names no collector.
+
+When it is on, telemetry is **not anonymous**. Events carry your git email and your GitHub login.
+
+## Turn it on
+
+Use one of two ways:
+
+- Enable the [`events`](../events/) role, in your config or through a pack, with the settings below.
+- Set `PIT_CREW_TELEMETRY_URL` in the `env` block of `~/.claude/settings.json`.
+
+```json
+{
+  "roles": {
+    "events": {
+      "enabled": true,
+      "settings": {
+        "url": "https://collector.example.com/events",
+        "token_env": "PIT_CREW_TELEMETRY_TOKEN"
+      }
+    }
+  }
+}
+```
+
+The endpoint is chosen in order: `PIT_CREW_TELEMETRY_URL` first, then the role's `url`.
+
+| Setting | Meaning |
+|---|---|
+| `url` | the collector endpoint. Events are POSTed with source `pit-crew`. Only `https` works, or `http://localhost` and `127.0.0.1` for tests. Any other value is ignored. |
+| `token_env` | the name of the variable whose value is sent as `Authorization: Bearer`. It must start with `PIT_CREW_`. Any other name sends no token and warns once. Default `PIT_CREW_TELEMETRY_TOKEN`. |
+| `ca` | a PEM bundle, as an absolute path or one under `~/`, trusted besides the usual roots. Use it for a collector signed by a private CA. |
+
+The `PIT_CREW_` rule protects you. A pack cannot make Pit Crew send another variable of your environment to its collector.
+
+## What is sent
+
+These event names: `run.started`, `run.finished`, `step.completed`, `gate.rejected`, `subagent.completed`, `human.wait`, `tool.failed`, `pr.opened`.
+
+Each event can carry:
+
+- a run id, which is a sha256 of the run slug and its creation time
+- the ticket id, when the slug is one
+- the repo names, the task type and the lane
+- `audience`, on a product run only
+- the harness version, the phase and the step
+- **your git email and GitHub login**
+- PR numbers
+- the subagent type and model family
+- a tool name and a failure category
+- the id of a gate rule that rejected
+- a session id
+- numbers: durations, waits, token counts, cost in USD, fix rounds, and counts of interventions, questions, retries and tool errors
+
+## What is never sent
+
+Code, diffs, prompts, ticket text, file contents, error messages and secrets.
+
+A failure is sent only as a category taken from the error's shape: `timeout`, `denied`, `mcp_error`, `exit_code` or `other`. The message itself is dropped. Any name outside the allowlists is dropped before it is queued.
+
+## The one-time notice
+
+The first run with telemetry on prints a notice with the classes of data above. Nothing is sent before it. The notice shows again when a new class of data is added, or when the endpoint host changes.
+
+## How sending works
+
+Events queue on your machine, under `~/.claude/pit-crew/<slug>/telemetry/queue.jsonl`. A detached process sends them in batches, so sending never blocks or breaks a run. A failed batch stays queued for the next attempt. The queue is capped at 2000 lines.
+
+## Force it off
+
+Set `PIT_CREW_TELEMETRY=off` in the `env` block of `~/.claude/settings.json`. The values `0`, `false` and `no` work too. This wins over any role, pack or URL.
+
+:::tip[Check before you trust a pack]
+A pack can turn the `events` role on for you. Run `node scripts/roles.cjs --role events` to see whether it is on, and which layer set it in `source`.
+:::
+
+## Next
+
+- [events](../events/)
+- [Environment variables](../../reference/environment/)

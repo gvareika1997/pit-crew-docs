@@ -1,0 +1,137 @@
+---
+title: Install
+description: Add the Pit Crew marketplace, install the plugin at user scope and run the health check.
+---
+
+import { Aside, Steps, Tabs, TabItem } from '@astrojs/starlight/components';
+
+Two commands install Pit Crew. Two one-time settings keep it up to date. One command checks the result.
+
+## Before you start
+
+Every phase needs these:
+
+| Tool | Check |
+|---|---|
+| Claude Code | `claude --version` |
+| `git` | `git --version` |
+| `gh`, authenticated | `gh auth status` |
+| Node | `node --version` |
+
+One more tool is needed before the first push:
+
+- **`gitleaks`**, for the pre-push secret scan. Install it with `brew install gitleaks` or from a release on its GitHub page. Without it the run stops before the push. It never records a clean scan it did not run.
+
+Everything else is optional. See [Connect your tools](../connect-your-tools/).
+
+## Install the plugin
+
+<Steps>
+
+1. **Add the marketplace and install the plugin.**
+
+   ```bash
+   claude plugin marketplace add gvareika1997/pit-crew
+   claude plugin install pit-crew@pit-crew
+   ```
+
+   Install at **user scope**, so the commands work from any repo on the machine.
+
+   <Aside type="note" title="Using a fork or a company pack?">
+   Replace `gvareika1997` with the GitHub account that hosts your marketplace. An organisation that publishes a pack installs the pack instead: the pack pulls the core in through its `dependencies`.
+   </Aside>
+
+2. **Enable auto-update.**
+
+   In Claude Code, run `/plugin`, then go to **Marketplaces → pit-crew → Enable auto-update**. Third-party marketplaces have auto-update off by default.
+
+3. **Store a git credential, if the marketplace repository is private.**
+
+   <Tabs>
+     <TabItem label="HTTPS remote">
+       ```bash
+       gh auth login
+       gh auth setup-git
+       ```
+     </TabItem>
+     <TabItem label="SSH remote">
+       `gh auth setup-git` covers HTTPS remotes only. For an SSH remote (`git@github.com:...`), load your SSH key into `ssh-agent`, or switch the marketplace to HTTPS.
+     </TabItem>
+   </Tabs>
+
+   <Aside type="caution">
+   Background updates never prompt. Without a working credential they fail silently and keep the old version.
+   </Aside>
+
+4. **Restart Claude Code.**
+
+5. **Run the health check.**
+
+   ```text
+   /pit-crew:setup
+   ```
+
+   It checks steps 2 and 3 and prints the fix for each one it confirms is missing.
+
+</Steps>
+
+## What `/pit-crew:setup` does
+
+It shows what Pit Crew needs before it changes anything. It proposes user-scope servers and plugins to remove, removes only what you confirm, and backs up each item first. It names missing credential variables but never asks for a value. It never touches your `CLAUDE.md`, your permission rules or your hooks.
+
+Run it once on a new machine, and again whenever you want a health check. Every status, the backup and the restore are explained in [Setup and health check](../setup/).
+
+## Check that it worked
+
+Type `/pit-crew:` in Claude Code. The four phase commands appear:
+
+```text
+/pit-crew:plan
+/pit-crew:dev
+/pit-crew:test
+/pit-crew:deploy
+```
+
+If they do not appear, restart Claude Code. A newly installed plugin loads on the next start. Install at user scope, or the commands are missing in other repos.
+
+<Aside type="tip">
+You do not have to connect any tool to continue. With no role connected a run still plans, implements, tests and opens the PRs.
+</Aside>
+
+## Install a pack instead
+
+Your organisation may publish a pack: a second plugin that binds its tools to Pit Crew's roles. Install the pack, not the core. The pack pulls the core in through its `dependencies`:
+
+```bash
+claude plugin marketplace add <your-org>/pit-crew
+claude plugin install pit-crew-<company>@pit-crew
+```
+
+Then restart Claude Code. The pack registers itself on session start, and its roles are on. Run `/pit-crew:setup` to see which roles are on and to fill in the credentials of the pack's servers.
+
+A pack pins a range of core versions. A pack written for another major version is ignored with a warning, never half-applied. See [Packs](../../packs/).
+
+## Runs started on an older version
+
+A `state.json` from a 2.x version cannot be resumed. Its state contract, its directory and its MCP server names all changed, and the scripts refuse the old contract. Finish a 2.x run before you switch. Or start it again with `/pit-crew:plan` and its ticket id: the run reuses the existing ticket instead of creating another.
+
+## Optional settings
+
+The core reads a few optional variables. Put them in the `env` block of `~/.claude/settings.json` and restart Claude Code.
+
+| Variable | Meaning |
+|---|---|
+| `PIT_CREW_AUDIENCE` | `dev` (the default) or `product`. The default audience when a run starts |
+| `PIT_CREW_SUPPORT_CHANNEL` | The support channel a product run posts its big-decision messages to |
+| `PIT_CREW_CONFIG` | Another path for the user config, instead of `~/.claude/pit-crew/config.json` |
+| `PIT_CREW_PACKS` | A path list of pack folders that replaces the config's `packs` list while it is set |
+| `PIT_CREW_TELEMETRY`, `PIT_CREW_TELEMETRY_URL` | Usage events. Off by default: with no configuration nothing is queued and nothing is sent |
+
+<Aside type="caution">
+The `env` block is plain text and every subprocess of the session inherits it. Keep `settings.json` out of synced or committed dotfiles, and never paste a credential into the conversation.
+</Aside>
+
+## Next
+
+- [Setup and health check](../setup/)
+- [Start your first run](../first-run/)

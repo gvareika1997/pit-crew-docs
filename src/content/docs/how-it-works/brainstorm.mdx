@@ -1,0 +1,76 @@
+---
+title: Brainstorm
+description: Turn an idea too big for one ticket into a decided initiative, with a shareable page and one tracker milestone per deliverable.
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+Some ideas do not fit one ticket. "Improve how we onboard merchants" needs a shared problem, some numbers and a decision before anyone can plan. `/pit-crew:brainstorm` takes that fuzzy idea to a decided initiative in one sitting.
+
+```text
+/pit-crew:brainstorm "reduce the manual work in onboarding"
+```
+
+It runs only when you type the command. No phase calls it, and `/pit-crew:plan` never waits for it. Plan for one sitting of 1 to 2 hours.
+
+## The steps
+
+<Steps>
+
+1. **Alignment.** Claude says what it understood, then asks one or two concrete questions at a time. The goal is a focus statement: the problem, who it hurts, what success looks like, and what is out of scope. You confirm it in text. Nothing is researched before you confirm.
+
+2. **Fits one ticket?** If the idea is small enough for one ticket, Claude says so and recommends `/pit-crew:plan`. The brainstorm stops there, with no research, no project and no page.
+
+3. **Research.** One round, bounded by the focus. It runs a read-only [triage](../triage/) in a special mode that asks "how does this work today". It reads code, DEV and production logs and DEV data. It also reads your tracker and, when the session has a tool for it, your team chat. You get the current state with numbers, and every source it could not reach.
+
+4. **Diverge.** Two or three alternatives, each with its trade-offs and a list of what is in and what is out. One or two **wild ideas** follow. Each one inverts an assumption of the focus. A wild idea is there to provoke your thinking. It is never counted as an alternative and never recommended.
+
+5. **Converge.** You pick one option. Claude asks a few more questions until the deliverables can be listed. It can offer a light technical pass that names the existing pieces the option would touch. The real design stays in `/pit-crew:plan`, ticket by ticket.
+
+6. **Page.** Claude publishes a page and gives you the link. You read it and approve it in text.
+
+7. **Tracker.** Only after you approve the page, Claude creates one project in your tracker. It has one milestone per deliverable and no issues. You can decline the project.
+
+8. **Knowledge base.** At the close, Claude offers one page with status Proposed in your knowledge base. It writes it only on your explicit yes in the conversation.
+
+9. **Close.** Claude prints how long it took and how many messages you sent, then one plan line per deliverable.
+
+</Steps>
+
+## What comes out
+
+| Output | Details |
+|---|---|
+| The page | Problem, evidence with numbers, discarded alternatives and wild ideas, the decision, and the deliverables. Aggregated numbers only, no customer identifiers or raw log lines. It starts private: you share it. |
+| The tracker project | One project, one milestone per deliverable, zero issues. Needs the `tracker` role. |
+| A knowledge-base page | Optional, status Proposed, only on your yes. Needs the `docs` role. |
+| The session file | `~/.claude/pit-crew/brainstorm-<slug>/session.json`, so you can resume. |
+
+If you ask for a change after approval, Claude republishes the same page and asks you to approve it again. If the project already exists, it updates the project and milestone descriptions too.
+
+:::note[A role that is off]
+With the `tracker` role off, Claude says so and skips the project. With the `docs` role off, it says so and leaves the knowledge-base page pending. Neither stops the brainstorm.
+:::
+
+## Continue with a plan
+
+The close prints one line per deliverable:
+
+```text
+/pit-crew:plan <milestone url>
+```
+
+A deliverable with no milestone gets `/pit-crew:plan <page url>` instead. The plan reads the brainstorm as a source. Its decisions reach the business interview as stated points, with their source. You confirm them in one round at the business gate instead of answering them again. If the plan cannot read the source, it asks you.
+
+## Resume and failures
+
+After each step, Claude prints a resume line: `/pit-crew:brainstorm <session path>`. Run the command with no argument to list the open sessions and pick one, or start a new one.
+
+A resume skips only the steps that finished. Before any tracker or knowledge-base write on a resume, Claude shows the page again and asks for your approval in this conversation. A marker in the file never counts as approval.
+
+A tracker step that fails is listed with its reason, never retried silently. The session stays open: retry it, or decline the project.
+
+## Next
+
+- [Plan](../plan/): what happens when you start a deliverable.
+- [Triage](../triage/): the research engine behind step 3.

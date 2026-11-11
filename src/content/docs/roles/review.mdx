@@ -1,0 +1,63 @@
+---
+title: review
+description: The role that names the bots that review your pull requests, so a run can wait for them and resolve their comments.
+---
+
+The `review` role tells a run which bots review your PRs. With it on, phase 3 waits for those bots on each push, reads their verdict and resolves their comments. It can also name a skill that reviews the diff before the push.
+
+## Verbs
+
+None. The role works from `settings` alone: it binds no tool, and `adapter` is optional. The bots are read through `gh`.
+
+## Adapters that ship
+
+| Adapter | What the guide covers | Settings it reads |
+|---|---|---|
+| `github-bots` | bots that review PRs on GitHub, plus an optional review before the push | `bots`, `prepush_skill`, `noise_markers`, `github_owner` |
+
+`settings.bots` is a list in priority order. The first bot found on a head is the primary reviewer.
+
+| Field | Required | What it does |
+|---|---|---|
+| `name` | yes | the short id the pipeline uses everywhere. Lowercase letters, digits, `_` and `-`. An entry with another name is dropped. |
+| `login` | yes | the GitHub account the bot comments from, exactly as the API returns it. An app's login ends in `[bot]`. |
+| `trigger` | no | the whole comment that asks the bot for a review. Absent: only a push triggers it. |
+| `status_context` | no | the commit status that carries the bot's verdict. Absent: a check whose name contains `name` is the bot's. |
+
+Declare each `name` once. A duplicate is a configuration error to report.
+
+**Which bots a round waits for.** A repo can say it in its `CLAUDE.md` on the default branch, under a `## pit-crew: review bots` heading, with a line such as `bots: alpha, beta` or `bots: none`. Without that line, the run uses the bots seen on the repo's last merged PRs and on the head.
+
+**The pre-push review.** `prepush_skill` names a skill, as `<plugin>:<skill>`, that reviews the diff before the push. If it is absent or not installed, that step is recorded as unavailable. The secret scan and the standards pass still run.
+
+## Minimal config
+
+```json
+{
+  "roles": {
+    "review": {
+      "enabled": true,
+      "adapter": "github-bots",
+      "settings": {
+        "bots": [
+          { "name": "alpha", "login": "alpha-review[bot]", "trigger": "@alpha review", "status_context": "alpha/review" },
+          { "name": "beta", "login": "beta-ai[bot]", "trigger": "/beta review" }
+        ]
+      }
+    }
+  }
+}
+```
+
+:::note[Company rules for bots]
+A rule that holds only for one company's bots does not go here. A pack writes it in its own `adapters/review/README.md`, and the run reads it before the first round.
+:::
+
+## When it is off
+
+With the role off, or `bots` empty, every author is a human reviewer. No bot verdict is awaited and no trigger is posted. Human comments are still resolved. The internal judge and the standards pass are the review.
+
+## Next
+
+- [deploy](../deploy/)
+- [Evidence and PRs](../../how-it-works/evidence-and-prs/)

@@ -1,0 +1,88 @@
+---
+title: Packs
+description: What a pack is, when you need one instead of a config file, and how Pit Crew finds the packs you install.
+---
+
+Pit Crew names no company tool. Your tracker, your test environment and your logs are roles, and something has to say which tool fills each one. A pack is one way to say it for a whole organisation.
+
+A pack is a second Claude Code plugin. It carries the bindings, the adapter guides and the MCP servers of one organisation. Each person installs that one plugin, and the core comes with it.
+
+## Do you need a pack?
+
+You have three options. Pick the smallest one that does the job.
+
+| You are | Use | What you get |
+|---|---|---|
+| Trying Pit Crew, or working with no shared tools | Nothing | Every role is off except `stack`. A run still plans, implements, tests and opens the PRs. Each step that needs a missing role is skipped and recorded |
+| One person who wants to bind MCP servers you already added | A config file, `~/.claude/pit-crew/config.json` | Your own bindings, on your machine only. See [Roles](../roles/) |
+| An organisation that wants every engineer on the same tools | A pack | One install per person. Bindings, guides and bundled MCP servers arrive together and update together |
+
+A repo can also carry its own file, `<repo>/.pit-crew/config.json`. It sets build and test commands for that repo and the roles the repo cannot ship without. It never names a tool id, a server or an `env` adapter, because the file arrives with the branch.
+
+:::tip[Start without one]
+You do not need a pack to start. Connect tools one role at a time in your config file. Write a pack when a second person needs the same setup.
+:::
+
+## What a pack carries
+
+| File | Purpose |
+|---|---|
+| `.claude-plugin/plugin.json` | The plugin manifest. Its `dependencies` entry pins the core to a version range |
+| `pack.json` | The bindings, one entry per role, in the `pack.v1` format |
+| `.mcp.json` | Optional. The MCP servers the pack bundles |
+| `adapters/<role>/<name>.md` | Optional. Guides only your organisation needs |
+| `hooks/hooks.json` and `scripts/register.cjs` | A SessionStart hook that registers the pack, so the core finds it |
+
+Company values go in each role's `settings`: hosts, team ids, cluster names, ticket prefixes. A pack never holds a token. It names the environment variable that holds one, and each person fills that variable in.
+
+The smallest working pack is `examples/pack-minimal` in the repository. Start from it.
+
+## How a team installs a pack
+
+Each person adds the marketplace that publishes the pack and installs the pack:
+
+```bash
+claude plugin marketplace add <your-org>/pit-crew
+claude plugin install pit-crew-<company>@pit-crew
+```
+
+The pack's `dependencies` entry makes Claude Code install the core too. The entry looks like this:
+
+```json
+"dependencies": [{ "name": "pit-crew", "version": ">=6.0.0 <7.0.0" }]
+```
+
+The version is a semver range resolved against the core's git tags. When the core and the pack live in different marketplaces, the pack's marketplace must list the core's marketplace in `allowCrossMarketplaceDependenciesOn`. Without it the core is not installed.
+
+After installing, each person restarts Claude Code and runs `/pit-crew:setup`. Setup shows which roles are on and walks the credentials of the pack's servers. See [Setup](../getting-started/setup/).
+
+## Version ranges
+
+`pack.json` also declares a `core` range. When the installed core falls outside it, the core ignores the pack. Its roles stay off, a warning names the pack, and the preflight shows a degraded `packs` row. Nothing crashes, and nothing is half-applied.
+
+When the core moves to a new major version, test your pack against it first. Then widen the range in both `pack.json` and `plugin.json`.
+
+## How Pit Crew finds packs
+
+The first source that answers wins:
+
+| Order | Source | Use it for |
+|---|---|---|
+| 1 | `PIT_CREW_PACKS`, a path list of pack folders | Tests, CI and trying a pack before you install it |
+| 2 | The `packs` list in `~/.claude/pit-crew/config.json` | Pinning exactly which packs you use, by folder or by installed plugin name |
+| 3 | The registry in `~/.claude/pit-crew/_packs/` | The default. Each installed pack's SessionStart hook writes its entry |
+
+The registry is read only when the config lists no pack. A pack the list names but that cannot be found is skipped with a warning. The registry is not read in its place.
+
+```json
+{ "packs": ["pit-crew-<company>", "/abs/path/to/another-pack"] }
+```
+
+## When two layers set the same role
+
+Bindings merge in layers, lowest first: core defaults, then packs in name order, then your user config, then the repo config. A higher layer wins. So your own config can override one setting of the pack without forking it.
+
+## Next
+
+- [Write a pack](./write-a-pack/)
+- [Open core design](./open-core-design/)

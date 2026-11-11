@@ -1,0 +1,80 @@
+---
+title: stack
+description: The role that says how each repo is installed, built, tested, linted and formatted, and which review checklists apply to it.
+---
+
+The `stack` role tells a run how to build and test a repo. It is the one role that is never off. With nothing configured, the `generic` adapter runs the commands the repo declares, or the ones its own docs name.
+
+## Verbs
+
+None. The role runs shell commands. Five command keys describe a repo:
+
+| Key | What it runs |
+|---|---|
+| `install` | installs dependencies |
+| `build` | builds the code |
+| `test` | runs the tests |
+| `lint` | runs the linter |
+| `format` | runs the formatter |
+
+A declared command runs as written, from the repo root, with no flag added or removed. A command you do not declare comes from the adapter guide. With `generic`, it comes from the repo's own docs. Success is the exit code, never the output text.
+
+## Repo-level config
+
+Declare the commands in `.pit-crew/config.json` at the repo root. This file arrives with the branch, so each repo carries its own.
+
+```json
+{
+  "roles": {
+    "stack": {
+      "adapter": "generic",
+      "settings": {
+        "install": "uv sync",
+        "build": "uv build",
+        "test": "uv run pytest -q",
+        "lint": "uv run ruff check .",
+        "format": "uv run ruff format --check ."
+      }
+    }
+  }
+}
+```
+
+## How the adapter is picked
+
+Without an `adapter` in the repo file, the adapter follows the kind the run recorded for the repo.
+
+| Repo kind | Adapter |
+|---|---|
+| `java` | `java-maven` |
+| `ui` | `ui` |
+| `node` | `node` |
+| anything else | `generic` |
+
+## Adapters that ship
+
+| Adapter | What the guide covers | Checklists it carries |
+|---|---|---|
+| `generic` | a repo whose build tool the plugin does not know. It looks for a missing command in `README`, `CONTRIBUTING`, a root task file such as `Makefile`, then the CI workflow. It never guesses a build tool and never installs one. | none |
+| `java-maven` | Maven builds. It resolves the JDK from the repo, never assumes one, and stops if that version is not installed. Reads `jdk_estate` when set. | standards, testing, security, performance |
+| `node` | a Node service with a `package.json`. Frozen install from the lockfile, then the repo's own scripts. | critical, DRY |
+| `ui` | a frontend with screens. Same guide as `node`. Browser specs run only for the change. | critical, architecture, DRY, styling, plus the UX checklist |
+
+The builder reads the checklists before editing. The standards pass checks the diff against them before the push.
+
+:::note[A command that cannot be found]
+With `generic`, a command no source names is recorded as not applicable, with the reason. The report lists the missing commands once, so you can declare them.
+:::
+
+## Check it
+
+```bash
+node scripts/roles.cjs stack --kind other --repo /path/to/repo
+```
+
+It prints the repo's adapter, guide, checklists and declared commands.
+
+## Next
+
+- [Write an adapter](../write-an-adapter/)
+- [Dev](../../how-it-works/dev/)

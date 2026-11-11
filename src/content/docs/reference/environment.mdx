@@ -1,0 +1,36 @@
+---
+title: Environment
+description: The optional environment variables and the files the Pit Crew core reads and writes.
+---
+
+Every variable here is optional. Put them in the `env` block of `~/.claude/settings.json` and restart Claude Code.
+
+## Variables
+
+| Variable | Read by | Meaning |
+|---|---|---|
+| `PIT_CREW_AUDIENCE` | the start of a run | `dev` (the default) or `product`. The default of `--audience`. See [Product mode](../../how-it-works/product-mode/) |
+| `PIT_CREW_SUPPORT_CHANNEL` | product runs | The support channel a product run posts its big-decision and missing-credential messages to. Unset, the run prints the message for the person to send. The older name `PIT_CREW_SUPPORT_SLACK_CHANNEL` still works |
+| `PIT_CREW_CONFIG` | role resolution | Another path for the user config, instead of `~/.claude/pit-crew/config.json` |
+| `PIT_CREW_PACKS` | role resolution | A path list of pack folders. While it is set it replaces the config's `packs` list and the pack registry. For tests, CI and trying a pack |
+| `PIT_CREW_TELEMETRY` | usage events | `off`, `0`, `false` or `no` turns telemetry off, whatever the role or the URL says |
+| `PIT_CREW_TELEMETRY_URL` | usage events | A collector endpoint. Setting it turns telemetry on. See [Telemetry](../../roles/telemetry/) |
+| `PIT_CREW_TELEMETRY_TOKEN` | usage events | The default variable whose value is sent as the bearer token. A role can name another one, and it must start with `PIT_CREW_` |
+
+:::caution[Credentials]
+The `env` block is plain text, and every subprocess of the session inherits it. Keep `settings.json` out of synced or committed dotfiles. Never paste a value into the conversation.
+:::
+
+The credentials of an MCP server belong to whoever provides that server: your own configuration, or a pack. A pack's README lists the ones it needs.
+
+## Files
+
+| Path | What |
+|---|---|
+| `~/.claude/pit-crew/config.json` | Your role bindings and your `packs` list. See [Roles and bindings](../../roles/) |
+| `<repo>/.pit-crew/config.json` | One repo's `stack` commands and `env` settings |
+| `~/.claude/pit-crew/<slug>/state.json` | The state of one run. See [State and reports](../../how-it-works/state-and-reports/) |
+| `~/.claude/pit-crew/_reports/<slug>-<date>.md` | The compact report of a run |
+| `~/.claude/pit-crew/_setup/backup-<timestamp>/` | What `/pit-crew:setup` removed, one file per item |
+| `~/.claude/pit-crew/_packs/` | The registry the packs' SessionStart hooks write |
+| `~/.claude/pit-crew/<slug>/telemetry/queue.jsonl` | Queued usage events, only when telemetry is on |

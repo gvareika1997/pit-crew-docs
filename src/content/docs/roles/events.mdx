@@ -1,0 +1,48 @@
+---
+title: events
+description: The role that sends usage events from your runs to an endpoint you choose.
+---
+
+The `events` role sends usage events about your runs to a collector. It is how telemetry is turned on. It is off by default, and the core names no collector.
+
+## Verbs
+
+None. The role works from `settings` alone: it binds no tool and needs no `adapter`. The endpoint is an HTTP URL in `settings.url`.
+
+## Adapters that ship
+
+None. The role needs only its settings.
+
+| Setting | Meaning |
+|---|---|
+| `url` | the collector endpoint. Only `https`, or `http://localhost` and `127.0.0.1` for tests. Any other value turns the role off with a warning. |
+| `token_env` | the name of the variable whose value is sent as a bearer token. It must start with `PIT_CREW_`. Default `PIT_CREW_TELEMETRY_TOKEN`. |
+| `ca` | a PEM bundle to trust, for a collector signed by a private CA |
+
+## Minimal config
+
+```json
+{
+  "roles": {
+    "events": {
+      "enabled": true,
+      "settings": { "url": "https://collector.example.com/events" }
+    }
+  }
+}
+```
+
+Write `"enabled": true` here. With no adapter to name, nothing else turns the role on.
+
+:::caution[Not anonymous]
+When on, events carry your git email and GitHub login, among other fields. They never carry code, diffs, prompts, ticket text, file contents, error messages or secrets. The full list, the one-time notice and how to force telemetry off are on the telemetry page.
+:::
+
+## When it is off
+
+Nothing is queued and nothing is sent.
+
+## Next
+
+- [Telemetry](../telemetry/)
+- [stack](../stack/)

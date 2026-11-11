@@ -1,0 +1,131 @@
+---
+title: Connect your tools
+description: Bind your tracker, logs, test environment and build commands to Pit Crew roles.
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+
+Pit Crew calls no tool by name. Each step names a **role**, which is a job an external tool does. Your installation says which tool fills each role.
+
+This page is optional. With nothing connected the pipeline still runs: every role is off except `stack`, and each step that needs an absent role is skipped and recorded.
+
+## The nine roles
+
+| Role | Connecting it adds | When it is off |
+|---|---|---|
+| `tracker` | the run reads an existing ticket and creates one after the business gate | the run has no ticket |
+| `docs` | a company-knowledge lookup before the business draft | terms come from the repo alone |
+| `env` | DEV verification in a test environment | each criterion is reported as not tested |
+| `logs` | log evidence for DEV cases and for triage | evidence is the service's own output |
+| `data` | the real schema before designing, and test-data fixtures | a criterion that needs a row is not tested |
+| `review` | the run waits for the review bots of a PR and resolves their comments | human comments are still resolved |
+| `deploy` | phase 4 observes the production rollout and advances it | `/pit-crew:deploy` merges and stops |
+| `events` | usage events go to your endpoint | nothing is queued or sent |
+| `stack` | the build, test, lint and format commands of each repo | never off |
+
+## Tell a repo how it is built
+
+Start here: `stack` is the one role every run uses. Create `.pit-crew/config.json` in the repo:
+
+```json
+{
+  "roles": {
+    "stack": {
+      "adapter": "generic",
+      "settings": {
+        "install": "uv sync",
+        "build": "uv build",
+        "test": "uv run pytest -q",
+        "lint": "uv run ruff check .",
+        "format": "uv run ruff format --check ."
+      }
+    }
+  }
+}
+```
+
+The five command keys are `install`, `build`, `test`, `lint` and `format`. A declared command runs as written. An absent one is taken from the adapter guide, and with `generic` from the repo's own docs.
+
+## Connect an MCP server to a role
+
+<Steps>
+
+1. **Add the MCP server the usual way.**
+
+   Use `claude mcp add`. Pit Crew bundles no MCP server.
+
+2. **Copy the tool ids.**
+
+   Run `/mcp` in your session. The tool ids it lists are the ones you bind.
+
+3. **Bind the tools to a role in `~/.claude/pit-crew/config.json`.**
+
+   This example connects a logs server:
+
+   ```json
+   {
+     "roles": {
+       "logs": {
+         "adapter": "grafana-loki",
+         "server": "grafana",
+         "tools": { "query": "mcp__grafana__query_loki_logs" },
+         "settings": {
+           "datasource_uid": "loki-dev",
+           "explore_url": "https://grafana.example.com/explore"
+         }
+       }
+     }
+   }
+   ```
+
+   Naming an `adapter` turns the role on. Bind only the verbs your tool has: a verb with no binding makes that one step unavailable, and the rest of the role works.
+
+4. **Check the result.**
+
+   Run this from the plugin folder: `plugins/pit-crew` in a clone, or the installed copy under `~/.claude/plugins/cache/`.
+
+   ```bash
+   node scripts/roles.cjs --role logs
+   ```
+
+   The role is connected when `status` is `on`, `source` is `config:user` and `warnings` is empty.
+
+</Steps>
+
+<Aside type="note" title="Who may call a tool">
+A string binding gives the tool `read` access. A tool that writes uses the long form, `{ "id": "...", "access": "write" }`. A tool that destroys something or advances a rollout uses `"access": "orchestrator"`, so only the main session can call it.
+</Aside>
+
+## Adapters that ship with the plugin
+
+An adapter is the guide that explains one tool to the pipeline. Name one of these in `adapter`:
+
+| Role | Adapters |
+|---|---|
+| `tracker` | `linear`, `jira`, `github-issues` |
+| `docs` | `notion`, `repo-markdown` |
+| `env` | `local` |
+| `logs` | `grafana-loki`, `local` |
+| `data` | `sql-mcp` |
+| `review` | `github-bots` |
+| `deploy` | `github-actions` |
+| `stack` | `generic`, `java-maven`, `node`, `ui` |
+
+## Where bindings live
+
+Four layers, lowest first. A higher layer wins.
+
+| Layer | File |
+|---|---|
+| core defaults | none: every role off, `stack` is `generic` |
+| packs | `<pack>/pack.json` |
+| you or your organisation | `~/.claude/pit-crew/config.json` |
+| one repo | `<repo>/.pit-crew/config.json`, for `stack` and the `env` settings |
+
+## One install for a whole team
+
+A **pack** is a second plugin that carries one organisation's bindings, MCP servers and guides. A team installs the pack, and the pack pulls the core in through its `dependencies`. The repository has the smallest working pack in `examples/pack-minimal/`, and the guide to write your own in `docs/your-company-fork.md`.
+
+## Full reference
+
+The complete binding format, the verbs of each role and the steps to write a new adapter are in [`plugins/pit-crew/adapters/README.md`](https://github.com/gvareika1997/pit-crew/blob/main/plugins/pit-crew/adapters/README.md) in the repository.

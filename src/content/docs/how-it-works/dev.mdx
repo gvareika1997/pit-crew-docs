@@ -1,0 +1,97 @@
+---
+title: Dev
+description: Phase 2 implements the approved design in worktrees, gets the build and focused tests green, reviews the diff and continues into phase 3.
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+Once you approve Gate 1c, phase 2 starts by itself. You can also start or resume it by hand:
+
+```text
+/pit-crew:dev [path to state.json]
+```
+
+With no argument, Pit Crew uses the most recently updated `~/.claude/pit-crew/*/state.json` and says which one. The phase needs a session that can write files and run commands.
+
+If the architecture is not approved yet, two things can happen. When the conversation already holds an agreed design, Pit Crew writes the state from it and continues on the light lane. Otherwise it sends you back to `/pit-crew:plan`. A guided-mode run never takes the light lane.
+
+## What happens
+
+<Steps>
+
+1. **Branches and worktrees.** Each repo gets a git worktree at `~/.claude/pit-crew/<slug>/wt/<repo>`, cut from the fresh base branch. Your own clone is never checked out or touched. The branch is the ticket's branch name, or `feature/<slug>` without a ticket. Pit Crew reports which environment files it copied and which required ones are missing, by name only.
+
+2. **Docs decided at the gates.** When Gate 1c asked for a flow doc, Pit Crew writes it on the branch at `Status: draft`. When the business step settled domain terms, it writes them to the repo's `CONTEXT.md`.
+
+3. **The test spec starts first.** On `full` and `quick` runs, `df-case-designer` writes the test spec in the background, in parallel with the code. A `hotfix` has no test spec.
+
+4. **Implementation.** A small mechanical change in one repo is made inline. Otherwise `df-implementer` builds each repo, or `df-implementer-lite` for a small slice. Independent repos run in parallel, dependent ones in order. A repo split into slices runs them in waves, joined one at a time. A `hotfix` writes no new tests.
+
+5. **Build and focused tests green.** The build plus the added, changed and nearest affected tests must pass in each repo. Logs go to `~/.claude/pit-crew/<slug>/tmp/`.
+
+6. **One review pass.** Pit Crew reads each repo's diff once. It marks every acceptance criterion `MET`, `NOT_MET` or `PARTIAL` with `path:line` proof. It also checks unrequested scope, wiring and repo conventions. A repo with a visual change gets `df-ui-reviewer`, which captures each touched screen in light, dark and 375px.
+
+7. **The judge.** `df-judge` attacks the whole run's diff, every repo at once, against the intent, the criteria and the cross-repo contract. It never sees the Builder's report. Up to three rounds run, then a final check by `df-judge-recheck` when findings stay open. A judge `NOT_MET` overrides the review pass.
+
+8. **Fixes.** Pit Crew applies every Critical and Important finding after checking it against the code. A rejected finding needs a written reason that cites the code. The UI reviewer runs one more round after the fixes.
+
+9. **Gaps.** A failed criterion is repaired locally. When the code exposes an ambiguous requirement, `df-business-analyst` rechecks it. A real conflict with the approved spec goes back to the right gate.
+
+10. **Decision record.** When the work settled a decision that is hard to reverse, Pit Crew writes one decision record in `docs/decisions/`, only if the repo already has that folder.
+
+11. **Into phase 3.** Once the acceptance check is aligned, Pit Crew says which focused tests passed and runs [Test](../test/) in the same run, without asking.
+
+</Steps>
+
+The judge is skipped on `quick` and `hotfix` runs, and for an inline change routed as trivial. A run that touches several repos is always judged.
+
+## What you decide
+
+Usually nothing. Phase 2 has no gate: approving Gate 1c covered the branches, commits and PRs of this run. Pit Crew asks only when something touches production, or when a requirement conflict reopens a gate you already passed.
+
+## What you get
+
+- One worktree and one feature branch per repo, with the commits of this run.
+- Code that compiles, with green focused tests.
+- A flow doc, a decision record or `CONTEXT.md` entries, only when the change earned them. Most runs write none.
+- A test spec covering every acceptance criterion, ready for phase 3.
+- A review record: criteria results, judge findings and their outcome, and rejected findings with reasons.
+
+## Which agents work here
+
+| Agent | Job |
+|---|---|
+| `df-case-designer` | Writes the test spec in parallel with the code |
+| `df-implementer` | Implements, compiles and runs the affected tests in one repo |
+| `df-implementer-lite` | Same job for a small slice; escalates to `df-implementer` when it stays red |
+| `df-ui-reviewer` | Captures touched screens and critiques them against the UX checklist |
+| `df-judge` | Adversarial review of the whole diff, round 1 |
+| `df-judge-recheck` | Rounds 2 and 3, and the final check |
+| `df-business-analyst` | Rechecks an ambiguous requirement against the diff |
+| `df-dev-configurator` | May start preparing DEV data early, while the code is written |
+
+## What each role adds
+
+| Role | Adds in this phase | When it is off |
+|---|---|---|
+| `stack` | The build, test and install commands of each repo | Always on |
+| `env`, `data` | An early start on the DEV environment and test data | Phase 3 prepares everything instead |
+| `docs` | Company constraints, read from the plan's lookup | The spec stands on code alone |
+
+No role is called live to write code. See [Roles](../../roles/).
+
+## When it stops
+
+- **The fix cap.** Three attempts on the same red build, then the run stops `blocked` with the log path.
+- **A missing toolchain.** A repo is never built with another JDK or Node version. Install it, then resume.
+- **A slice cut three times.** It is the wrong size. The run stops and the slice goes back to the architect to split.
+- **Business drift.** The code shows the approved spec is wrong, and the loop cannot settle it. Pit Crew says what is missing.
+- **A spent session.** Pit Crew saves a handoff and prints `/pit-crew:test <state-path>`. Run it to continue.
+- **Not ready to start.** No approved architecture, or a guided-mode run waiting on IT review.
+
+A blocked run keeps its worktree and branch, and writes a retro. See [Guardrails](../guardrails/).
+
+## Next
+
+- [Test](../test/): pre-push review, PRs and DEV verification.
+- [Lanes](../lanes/): what `quick` and `hotfix` skip here.

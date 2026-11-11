@@ -1,0 +1,417 @@
+---
+title: "Glossary"
+description: "The vocabulary Pit Crew uses, one meaning per term."
+---
+
+The terms a run uses, as the plugin defines them in its `CONTEXT.md`. Each term has one meaning, and the words to avoid for it.
+
+
+The four-phase feature delivery pipeline: plan with two human gates, unattended implementation, tests and PRs, and a manual deploy.
+
+### Language
+
+**Retro owner team**:
+The lead team of the tracker project that receives retro issues (`roles.tracker.settings.retro_project`). Every retro issue lands there, whoever ran the run; `df-retro-publisher` reads it from the project at publish time, and the plugin never names it.
+_Avoid_: developer's team, the work-ticket team
+
+**Safety stop**:
+A point where `/pit-crew:deploy` stops and asks instead of advancing: a merge the session denies, an active freeze, a busy environment, a timeout, a rollback or `Degraded`/`Aborted` rollout, an owner-lock `403`, errors climbing, or an observation window with nothing observed. Anything else runs without a question once the deploy is invoked.
+_Avoid_: pause, routine confirmation
+
+**Rejected access** (es: "acceso vencido"):
+A credential that is set on the machine but that the service refuses when the preflight tries it (row `cause: rejected`). The fix is to renew it, then `/mcp` reconnect so the session drops the old one.
+_Avoid_: invalid token, expired
+
+**Never configured** (es: "nunca configurado"):
+No credential is set on the machine for that access (row `cause: not_configured`). The preflight says so without calling the network, and names the variable to set.
+_Avoid_: absent
+
+**No response** (es: "sin respuesta"):
+The service does not answer within the preflight's time limit, or answers with a server or network error (row `cause: no_response`). Usually the network or the service itself, never the credential.
+_Avoid_: down
+
+**Deploy driver** (es: "conductor del deploy"):
+Who decides when each canary step of `/pit-crew:deploy` advances: the person or the agent. Chosen once per run (by flag or one question) and recorded in the run's state. With the person driving, the agent only reads, reports and recommends.
+_Avoid_: owner
+
+**Mockup option**:
+One clickable visual proposal for one screen, with mock data, representing a distinct layout, flow or interaction approach. It is a reference to implement from, not a pixel-exact specification.
+_Avoid_: wireframe, variant
+
+**UX checklist**:
+The short, generic list of interface quality checks pit-crew owns (hierarchy, states, data, accessibility, responsive, motion, copy). It complements the design system each repo declares and never names one.
+_Avoid_: design skill, style checklist
+
+**UI review**:
+The step where `df-ui-reviewer` captures each screen a diff touches (and each mockup and the plan page before they publish) in light, dark and 375px, critiques the images and the diff against the UX checklist, and returns findings ranked Critical, Important or Minor, each grounded in a pattern the repo already has. Critical and Important are applied in one round with one recapture. The captures live in the run folder and on the run's claude.ai page, never in git.
+_Avoid_: visual regression, screenshot test, design review
+
+**Session person**:
+The person authenticated in the tracker the session runs with (each tracker adapter guide says how it resolves them). Every work ticket pit-crew creates, always in the primary tracker (the plan ticket and a hotfix follow-up), is assigned to them; retro and insights issues are not work tickets and stay unassigned.
+_Avoid_: user, owner
+
+**First judge review** (es: "primera revisión del juez"):
+The single full review of the whole change that `df-judge` does in round 1, before any confirmation round. It is the only judge dispatch that reads the code for new defects across every repo.
+_Avoid_: el juez lento, revisión del juez
+
+**Confirmation review** (es: "revisión de confirmación"):
+A `df-judge-recheck` dispatch (rounds 2-3 and the final check) that only verifies the previous findings are fixed and looks for new ones inside the fix diff.
+_Avoid_: segunda revisión, second judge review
+
+**Case designer**:
+The testing role that writes the test spec from the approved acceptance criteria and later judges the collected evidence against it.
+_Avoid_: spec author, evaluator, judge
+
+**Configurator**:
+The testing role that prepares the environment and the test data a test spec declares, and removes what it created.
+_Avoid_: seeder, data loader
+
+**Early preparation** (es: "preparación anticipada"):
+The Configurator's phase-2 run (`--mode early`): it readies, before the test phase, only what does not depend on the final code (route, DEV data, variables), in the background while the change is still being built.
+_Avoid_: pre-config
+
+**Refresh to final code** (es: "actualización al código final"):
+The test-phase step (`--mode refresh`) that brings the environment up to the final code (creates or rebuilds the denv at the head) and retries what early preparation could not ready.
+_Avoid_: re-prepare
+
+**Orphan fixture** (es: "dato huérfano"):
+Test data or an environment prepared for a criterion that no longer exists, or for a run that ended before testing. It is removed, never left in DEV.
+_Avoid_: leftover, residue
+
+**Tester**:
+The testing role that runs the test spec paths in DEV and returns raw evidence, without grading it.
+_Avoid_: verifier, runner
+
+**Test spec**:
+The list of test paths per acceptance criterion, each with its preconditions and expected result, happy and failure paths alike.
+_Avoid_: test plan, cases
+
+**Fixture manifest**:
+The record of every piece of data or environment the Configurator created for one run, used to remove it afterwards.
+_Avoid_: seed list
+
+**Patch check** (es: "revisión previa de la actualización"):
+Running state_merge with --check: tells, without writing the state, whether the pending patches would merge, and lists every violation.
+_Avoid_: validation, dry-run
+
+**Wrapped patch** (es: "parche envuelto"):
+A patch of one section whose only top-level key is that section's own name (`\{"architecture":\{...\}\}` in `patches/architecture.json`). The merge always refuses it: a patch is the content of its section, never the section.
+_Avoid_: nested patch
+
+**New run** (es: "corrida nueva"):
+A run created by the plugin version that introduced the strict top-level keys (`STRICT_KEYS_SINCE`, 5.2.0) or a later one, read from the run's `plugin_version`. A run with no `plugin_version` is an old run.
+
+**Evidence**:
+What was observed in DEV that backs the status of an acceptance criterion: the response, the record, the log or the screen.
+_Avoid_: proof, test log
+
+**Carried evidence** (es: "Evidencia arrastrada"):
+Evidence obtained on an earlier commit that still stands for the current head because every file changed since then is documentation, tests or the glossary, came from the base through a clean merge-forward, or nothing changed at all; it carries that diff as proof.
+_Avoid_: stale evidence, reused evidence
+
+**Merge-forward** (es: "Merge-forward"):
+A merge of the base branch into the PR branch to bring it up to date, without changing what the PR proposes.
+_Avoid_: rebase, sync, update branch
+
+**PR own files** (es: "Archivos propios de la PR"):
+The files the PR changes against its base branch; what arrives from the base through a merge-forward is not one of them.
+_Avoid_: full PR diff, base files
+
+**Case**:
+One acceptance criterion with its outcome in DEV: verified, partial or not tested.
+_Avoid_: test case, scenario
+
+**Triage**:
+A read-only investigation that establishes the expected behavior, the observed behavior and the root cause of a problem, and ends in a report without fixing it. Its only write is correcting knowledge-base drift (a block of a page that differs from the base branch and is not the symptom). Runs alone (`pit-crew:triage`) or before planning a bug fix.
+_Avoid_: fix, diagnosis of a failing test (`tests.diagnosis`), the APORTA/NIT/FALSO classification of PR comments
+
+**Root cause**:
+Why the observed behavior happens, stated with a certainty: confirmed, probable or undetermined.
+_Avoid_: culprit, symptom
+
+**Triage mode**:
+The depth of a triage, full or quick, which decides what it delivers. Inside a run it follows the task type.
+_Avoid_: task type (already means hotfix, quick or full)
+
+**Raw report**:
+A message pasted as it is from a chat, written by someone else, with no ticket. Triage investigates it first, whatever its wording.
+_Avoid_: ticket, request
+
+**Not a bug**:
+A triage verdict: the behavior is by design, a misunderstanding, a data or configuration problem, or a feature request. The run stops before planning a fix and asks what to do.
+_Avoid_: wontfix, invalid
+
+**Business contract** (es: "contrato de negocio"):
+The behavior the business expects (rules, owners, onboarding requirements) as the company knowledge base (the `docs` role) describes it. It states the intended rule; the code on the base branch states the current behavior.
+_Avoid_: technical specification
+
+**Drift finding** (es: "hallazgo de deriva"):
+A difference between what a knowledge-base page says and what the base branch does. Pre-existing and not the reported symptom: pit-crew fixes the block of the page. Matching the symptom of a triage: a candidate cause, and the page is not edited.
+_Avoid_: documentation bug, conflict
+
+**Entry guide** (es: "guía de entrada"):
+The one knowledge-base page whose link pit-crew knows (`roles.docs.settings.entry_url`). A company-knowledge lookup reads it first and follows its routing to the spaces to search; it names the primary and the backup spaces, so no space or page title is wired into the plugin.
+_Avoid_: index page, hardcoded page
+
+**Primary teamspace** (es: "espacio principal"):
+The space of the knowledge base (stored as `teamspace`) the entry guide belongs to and a lookup searches first. The only one whose pages a drift fix may edit or comment on.
+_Avoid_: main workspace
+
+**Backup teamspace** (es: "espacio de respaldo"):
+A space the entry guide points to for when the primary one has nothing relevant. Read-only: a finding from it is cited but never edited.
+_Avoid_: secondary workspace, fallback teamspace
+
+**Ad hoc subagent**:
+A subagent the orchestrator dispatches that is not one of this plugin's agents, for example a `general-purpose` test runner. It always carries an explicit model and never inherits the session's.
+_Avoid_: loose subagent, generic runner
+
+**Universal check**:
+A review check valid on any repo of that stack regardless of team conventions.
+_Avoid_: generic check
+
+**Repo rule**:
+A convention the reviewed repo declares in its own guidance (`CLAUDE.md`, `AGENTS.md`, docs) that the review applies only in that repo.
+_Avoid_: house rule, standards
+
+**Agent tool**:
+Any piece Claude can invoke: an MCP tool, a skill, an agent, a command or a hook. An MCP tool is authored under `pit-crew:tool-authoring`; the rest, and the files agents read, under `pit-crew:skill-authoring`.
+_Avoid_: tool (unqualified, when it could mean a Bash or MCP tool), plugin piece
+
+**No-op**:
+An instruction line that changes nothing the agent does, as `skills/skill-authoring/resources/writing-rules.md` X-WRITE-7 defines it. The whole sentence is deleted.
+_Avoid_: useless line
+
+**Knowledge source**:
+The place where the knowledge of a domain lives (a page, a system or a repo) and that a skill, agent or command points at instead of copying it (X-WRITE-1). In Spanish, _fuente del conocimiento_.
+_Avoid_: context
+
+**Response envelope**:
+The single JSON every MCP tool answers with: `status` (`ok`, `error`), `data`, `error\{code,message,details\}`, `links.panel` and a `notice` for untrusted text. Lists add a hard cap and `\{total, shown, truncated, items, hint\}`.
+_Avoid_: free-form response, raw DTO
+
+**Bounded wait**:
+A wait with a condition, an interval and a cap. Reaching the cap is a stop-and-ask, never a longer wait.
+_Avoid_: polling, wait loop
+
+**Wait helper**:
+The model-free script `scripts/wait_until.cjs` that carries out one bounded wait: it polls a read tool of an HTTP MCP server an installed pack bundles and prints a single short `wait-result/v1` (ready, timeout with the last state seen, terminal failure, or error when its calls failed). It never acts on what it reads.
+_Avoid_: watcher, monitor (already means the `Monitor` tool)
+
+**Closed without asking** (es: "Cerrado sin preguntar"):
+The gate block listing the points the interview closed without a question because they do not apply by construction or a cited source already settles them (a `path:line`, DEV or replica data, the person's words, an approved decision of the run; never a ticket), each with that source. Approving the gate confirms them all; naming one in the answer reopens it as a real question.
+_Avoid_: silent not-applicable, assumed
+
+**Turn budget** (es: "Tope de turnos"):
+The maximum number of turns a subagent may take on one dispatch before Claude Code cuts it, set by `maxTurns` in the agent's frontmatter and justified by what that role's task usually demands.
+_Avoid_: limit, maxTurns alone
+
+**Partial result** (es: "Resultado parcial"):
+The close a subagent returns at about three quarters of its turn budget, listing what it finished (`done[]`) and what it did not reach (`remaining[]`), so the orchestrator continues with only the remainder instead of losing the work to a cut.
+_Avoid_: incomplete output, failure
+
+**Screen-driving route** (es: "forma de manejar pantallas"):
+How the Tester opens and operates a screen in DEV: a throwaway `playwright-core` script run through Bash, with the session in a saved `storageState`. There is exactly one.
+_Avoid_: fallback route, plan B
+
+**First-time setup**:
+The guided conversation, started by hand with `/pit-crew:setup`, that leaves a person's local Claude Code config ready for pit-crew and can be repeated later as a health check.
+_Avoid_: bootstrap, installer, wizard
+
+**Cleanup**:
+Removing from a person's config the MCP servers and plugins that pit-crew does not need, always after a backup and an explicit confirmation, and never touching their `CLAUDE.md`, permissions or hooks.
+_Avoid_: wipe, reset, delete everything
+
+**Indispensable, recommended and optional tool tiers**:
+Three levels of tool: pit-crew does not work without the indispensable one; the recommended one improves use a lot and is suggested strongly; the optional one is offered only to whoever wants it, one at a time.
+_Avoid_: required, nice to have
+
+**Modo producto** (en: Product mode):
+The way to use Pit Crew for people without a technical profile: only business questions and plain summaries; Pit Crew settles the technical part and takes the request to a change proposal ready for approval.
+_Avoid_: modo for dummies, modo no técnico
+
+**Decisión grande** (en: Big decision):
+A technical choice of weight (how users are identified, where secrets are kept, a new database, the technology of a new service, new infrastructure, background communication between services). Pit Crew posts a summary to the support channel for IT to validate, and the person chooses to wait or to continue. A new table or endpoint is not one.
+_Avoid_: decisión difícil de revertir, decisión de arquitectura
+
+**Guía técnica** (en: Technical guide):
+The technical input a product person offers on their own. It orients but does not bind: the design may depart from it, with the reason written down.
+_Avoid_: requisito técnico, sugerencia vinculante
+
+**Entrega a persona técnica** (en: Delivery to a technical person):
+The moment the change proposal is ready and the product person chooses who approves it; once approved, they publish it themselves.
+_Avoid_: traspaso, handoff
+
+**Tarea chica** (en: Small task):
+A slice the router sizes with the `sonnet-medium` Builder profile; it goes to the lite Builder and escalates to the full one when it stays red after its round.
+_Avoid_: tarea simple
+
+**Corrida limpia** (en: Clean run):
+A run that finished with no block, no Builder escalation, no turn-budget continuation and no fix rounds at the cap. It writes its local report and publishes no retro.
+_Avoid_: corrida exitosa
+
+**Ronda de arreglo** (en: Fix round):
+A new implementation or test pass after a red build, a red test or a judge finding, counted in `fix_rounds`. A normal fix round does not make a run retried.
+_Avoid_: reintento
+
+**Corrida reintentada** (en: Retried run):
+A run with a lite-to-full Builder escalation, a turn-budget continuation or `fix_rounds` at the cap. Together with a blocked or needs-input run, the only runs that publish a retro.
+_Avoid_: ronda de arreglo
+
+**Retro** (en: Retro):
+The review of what a run learned. It runs right after the PRs open and again at the end of phase 3 only when something new happened since; tool lessons go to the tracker's retro project, and a knowledge-base page the run proved wrong against `origin/&lt;base>` is corrected through the drift fix.
+_Avoid_: retro after deploy
+
+**Ejemplo mínimo válido** (en: Minimal valid example):
+The smallest value that `state_merge.cjs` would accept at the exact path a shape rejection names (for an array entry, the entry with only its required fields), printed in the rejection itself. Never a whole-section patch: an array in a patch replaces the stored array.
+_Avoid_: ejemplo de ayuda, snippet
+
+**Result file** (es: "Archivo de resultado"):
+The file a dispatched testing role writes under the run's `results/` folder with its whole result; its closing message carries only the path, the status and the counts, and a script registers it into the state.
+_Avoid_: forwarded payload, result via /tmp
+
+**Away** (es: "ausente"):
+A human wait recorded when a run shows no activity for more than 30 minutes: neither work nor a wait on a specific person or machine. A gate or question wait keeps its first 30 minutes and the rest becomes away.
+_Avoid_: idle, generic inactivity
+
+**Abandoned** (es: "abandonado"):
+The outcome of a run that never closed and showed no activity for more than 24 hours, declared afterwards, on the next session start (telemetry hook), once per run.
+_Avoid_: failed, cancelled
+
+**Startup gate** (es: "puerta de arranque"):
+The proof, before a run closes, that every backend service the run deployed reaches ready on its latest commit according to its own health checks. A repo may also declare a local startup command that runs before the push.
+_Avoid_: smoke test, startup check
+
+**Unanswered bot finding** (es: "hallazgo de bot sin responder"):
+A root finding from a bot account with Major or Critical severity (or the words the repo declares) that has no non-bot reply classifying it with a reason, nor a reply citing the commit that fixes it, on the current head.
+_Avoid_: pending comment
+
+**Round** (es: "Ronda"):
+One cycle of comments on a PR: wait for every expected automated reviewer (bounded), read what they raised, answer every thread, and push at most one commit with the fixes. Round 1 is the one that runs before the tests; a PR has at most 5.
+_Avoid_: iteration, pass
+
+**Automated reviewer** (es: "Revisor automático"):
+A tool that reviews PRs with no human in the loop (the `review` role names them). A round waits for the ones the repo declares under `## pit-crew: review bots`, else those seen on its recent merged PRs; identifiers keep the existing `bot` spelling.
+_Avoid_: bot (in prose)
+
+**Minor finding** (es: "Hallazgo menor"):
+A bot comment labelled Minor or NIT. The label is the bot's; the round class `minor` (`pit-crew:pr-comment-resolution` §7) is a fix in executable code that the run judged small, and a "Minor" that is really a behaviour defect is a `grave` round.
+_Avoid_: nitpick, trivial comment
+
+**Non-executable content** (es: "Contenido no ejecutable"):
+What a change can touch without altering how the system behaves in that repo: comments in code and documentation that is not loaded at runtime. Agent and skill instructions are runtime.
+_Avoid_: docs, cosmetic
+
+**PR hecha con pit-crew** (en: "PR opened by pit-crew"):
+A pull request opened by pit-crew (a run, or the `pit-crew:pr` skill outside one), marked with the `pit-crew` label. A run over N repos opens N of them, and each one is counted once, when its number first lands in the run's state.
+_Avoid_: PR automática
+
+**PR mergeada** (en: "merged PR"):
+A pull request integrated into its repo's default branch, by pit-crew's deploy phase or by hand. It says nothing about whether the change is running in prd.
+_Avoid_: PR deployada
+
+**Initiative** (es: "iniciativa"):
+Work too big for one ticket, split into deliverables and decided in a brainstorm before any ticket exists. In a tracker that has projects it is one project.
+_Avoid_: epic
+
+**Deliverable** (es: "entregable"):
+A part of an initiative that can ship and be verified on its own. In a tracker that has milestones it is one milestone of the initiative's project; `/pit-crew:plan` creates its ticket when it starts.
+_Avoid_: phase
+
+**Focus statement** (es: "enunciado de foco"):
+Four parts the person confirms before a brainstorm researches anything: the problem, who it hurts, what success looks like and what is out of scope.
+_Avoid_: brief
+
+**Wild idea** (es: "bolazo"):
+A deliberately far-fetched idea a brainstorm shows to provoke the person's own thinking. It is marked as such, never counted as an alternative and never recommended.
+_Avoid_: alternative
+
+**Real close** (es: "cierre real"):
+A background agent has really closed only when its result exists: its result file in the run's results folder, or its closing JSON block when it has no file. Anything else is not a close, whatever the notification says.
+_Avoid_: finished, completed
+
+**Interim notice** (es: "aviso intermedio"):
+A message from an agent saying it is still waiting on something of its own. It is never a close and never a reason for the orchestrator to end its turn.
+_Avoid_: partial result
+
+**Blocking wait** (es: "espera bloqueante"):
+Waiting without ending the turn, in foreground calls of at most 10 minutes repeated up to a total cap. Never an armed watch followed by the end of the turn, never a placeholder watch, never another agent's watch.
+_Avoid_: "I'll report when it resolves", placeholder monitor
+
+**Orchestrator deadline** (es: "plazo del orquestador"):
+The longest the orchestrator waits for an agent's result before acting: continue the agent, then re-dispatch it, then record the step partial and go on to the PR. Derived from the agent's turn budget.
+_Avoid_: timeout
+
+**Assumption** (es: "Supuesto"):
+A point pit-crew decides without asking and lists in the gate's "Closed without asking" block with its source (`source_kind`: code with `path:line`, data, the person's words in this conversation, or a decision approved earlier in the run). A ticket is never a source. An assumption with no source is a question.
+_Avoid_: default, guess
+
+**Real question** (es: "Pregunta real"):
+A question with at least two reasonable answers that lead to different code or design, which reading the code, the data or the conversation cannot settle. Anything else is an assumption, not a question.
+_Avoid_: courtesy question, confirm round
+
+**Success signal** (es: "señal de éxito"):
+What is counted in production, as a log line or a metric the service itself emits on the change's normal path, to confirm a high-risk change worked. It lives in a PR-body section whose heading holds «éxito», «success» or «verif», with fenced `logql` or `promql` blocks, the format a deploy monitor reads. No threshold or window: the monitor compares the same span before and after the deploy. A line logged only at error or warn level is a guard: zero is the good result and the section says so.
+_Avoid_: success metric, KPI, trace-based signal, sql check
+
+**High-risk change** (es: "riesgo alto"):
+A change the PR declares a one-way door in its `**Door:**` line: what stays behind after a revert. Only a high-risk change must carry a success signal.
+_Avoid_: important change, `verify:true` (that marks DEV evidence, not the door)
+
+**Role**:
+A job an external tool does for the pipeline. There are nine: `tracker`, `docs`, `env`, `logs`, `data`, `review`, `deploy`, `events`, `stack`. Pipeline text names a role and a verb (`env.up`), never the tool; a role that is off skips its step and is recorded (`skills/pipeline/resources/roles.md`).
+_Avoid_: integration, tool (for the job itself)
+
+**Adapter**:
+The guide that says how one tool fills a role: each verb with its call, the settings it reads and its limits. It names no value of one company.
+_Avoid_: connector, driver
+
+**Binding**:
+What an installation supplies for a role: the adapter, the MCP tool id that fills each verb with its access, and the settings (values). `scripts/roles.cjs` resolves it from the packs, the user config and the repo config.
+_Avoid_: mapping, wiring
+
+**Pack**:
+A plugin that carries the bindings, adapters and MCP servers of one organisation (`pack.json` at its root), installed beside the core.
+_Avoid_: extension, company plugin
+
+**Slice** (es: "porción"):
+The part of one repo's change that delivers a behavior verifiable on its own (`verifies`) and that one Builder finishes within its turn budget. Slices split by behavior, not by layer; a split by layer survives only inside a staged mass change.
+_Avoid_: layer slice, ticket
+
+**Blocker** (es: "bloqueo"):
+A slice listed in another slice's `blocked_by`: it must commit green before that slice can start.
+_Avoid_: loose dependency
+
+**Frontier** (es: "frontera"):
+The slices whose blockers have all finished: the ones phase 2 dispatches now, all at once, each in its own worktree when they share no file.
+
+**Staged mass change** (es: "cambio masivo en etapas"):
+A mechanical change that touches a huge number of places, done as expand (add the new form beside the old), migrate (move the call sites in batches, each blocked by the expand) and contract (remove the old form, blocked by every batch). The repo builds and its tests pass between stages, and the run still opens one PR per repo.
+_Avoid_: one-shot refactor
+
+**Eval case** (es: "caso"):
+One eval of the plugin under `evals/`: a request, the skill or agent that must answer it, and the graders that judge the answer.
+_Avoid_: test, loose eval, Case (an acceptance criterion in DEV)
+
+**Eval run** (es: "corrida"):
+One execution of an eval case. Each case runs 3 times and its result is how many passed (for example 2/3).
+_Avoid_: run (a pit-crew run), attempt
+
+**Parity** (es: "paridad"):
+The verdict of a PR when no counted eval case blocks the merge against main. Only parity lets the merge be asked for.
+_Avoid_: tie, same score
+
+**Regression** (es: "regresión"):
+An eval case that the branch passes clearly fewer times than main, by the threshold in the header of `scripts/eval_parity.cjs`. A smaller drop is noise.
+_Avoid_: score drop, point difference
+
+**No signal** (es: "sin señal"):
+The verdict when the comparison gave no complete result; the causes are in the header of `scripts/eval_parity.cjs`. It does not let the merge be asked for.
+_Avoid_: partial parity
+
+**Not evaluable** (es: "no evaluable"):
+An eval case kept out of the verdict by a defect outside the case, listed apart in `evals/parity.json` with its reason.
+_Avoid_: skip, ignored
+
+---
+
+<small>Generated from pit-crew `42bde34` (core 6.1.0) by `scripts/gen-reference.mjs`. Do not edit by hand.</small>

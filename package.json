@@ -1,0 +1,22 @@
+{
+  "name": "pit-crew-docs",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build && node scripts/check.mjs",
+    "preview": "astro preview",
+    "reference": "node scripts/gen-reference.mjs"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "0.42.10",
+    "astro": "7.4.11",
+    "astro-mermaid": "2.2.0",
+    "mermaid": "12.3.0",
+    "sharp": "^0.34.0"
+  }
+}

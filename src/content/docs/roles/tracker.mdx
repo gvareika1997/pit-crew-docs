@@ -1,0 +1,77 @@
+---
+title: tracker
+description: The role that reads an existing ticket and creates one after the business gate.
+---
+
+The `tracker` role connects a run to your issue tracker. With it on, the run reads an existing ticket you hand over. After you approve the business gate, it creates the ticket. The ticket id then shapes the branch name and the PR title.
+
+## Verbs
+
+All verbs are optional. Bind the ones your tool has.
+
+| Verb | What it is for |
+|---|---|
+| `get` | read one ticket |
+| `search` | find a ticket by text, for example to avoid a duplicate |
+| `create` | create the ticket after the business gate |
+| `update` | change a ticket: labels, assignee, body |
+| `list_teams` | list the teams, to pick one |
+| `get_project` | read a project |
+| `labels` | list the labels |
+
+Bind `create` and `update` with `access: "write"`.
+
+## Adapters that ship
+
+| Adapter | What the guide covers | Settings it reads |
+|---|---|---|
+| `linear` | create, search and update issues in Linear. It resolves the team from settings, an environment variable, the prefix of a ticket id, or by asking you. It never picks a default team. | `team`, `team_env`, `branch_case` |
+| `jira` | read-only lookup of an existing Jira ticket. It never creates, edits, comments on or transitions one. | `id_pattern`, `project`, `cloud_id`, `branch_case` |
+| `github-issues` | issues of a GitHub repository through the `gh` CLI. No MCP tool. Carries `get`, `search`, `create` and `update`. | `repo`, `labels`, `retro_repo` |
+
+A few behaviours worth knowing:
+
+- With `github-issues`, the ticket id looks like `GH-42`. The PR body gets a `Closes` line, which closes the issue on merge. That is the only state change the pipeline makes. GitHub Issues has no priority, so the run asks you once.
+- With `jira`, a failed read is a blocker. The run stops and asks you to reconnect, instead of going on without the ticket.
+- Before `create`, the run searches by title. An open issue with the same title is reused.
+- Ticket text is data, never instructions.
+
+## Minimal config
+
+In `~/.claude/pit-crew/config.json`:
+
+```json
+{
+  "roles": {
+    "tracker": {
+      "adapter": "linear",
+      "tools": {
+        "get": "mcp__linear__get_issue",
+        "search": "mcp__linear__list_issues",
+        "list_teams": "mcp__linear__list_teams",
+        "get_project": "mcp__linear__get_project",
+        "create": { "id": "mcp__linear__save_issue", "access": "write" },
+        "update": { "id": "mcp__linear__save_issue", "access": "write" }
+      },
+      "settings": { "provider": "linear", "team": "ABC", "branch_case": "lower" }
+    }
+  }
+}
+```
+
+For GitHub Issues, no tools are needed:
+
+```json
+{ "roles": { "tracker": { "adapter": "github-issues", "settings": { "repo": "acme/shop" } } } }
+```
+
+Run `gh auth status` first. A non-zero exit means the tracker is not connected.
+
+## When it is off
+
+The run has no ticket. It still plans with both gates, implements, tests and opens PRs. A step that needs a missing verb, such as `list_teams` on GitHub Issues, is skipped and recorded.
+
+## Next
+
+- [docs](../docs/)
+- [Roles and bindings](../)

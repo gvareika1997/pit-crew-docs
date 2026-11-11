@@ -1,0 +1,50 @@
+---
+title: "Agents (16)"
+description: "The pipeline agents of Pit Crew: what each one does, its model and its tools."
+---
+
+The phase commands dispatch these agents. You do not call them yourself. Each one has a fixed job, a model and a tool list, and a hook denies it any MCP tool outside the [roles](../../roles/) it holds.
+
+| Agent | Job | Model | Effort |
+|---|---|---|---|
+| `df-architect` | Designs service ownership, data changes, communication, cross-service contracts, lens-tagged risks and per-behavior Builder slices for complex pit-crew work. Produces no implementation code. | opus | low |
+| `df-business-analyst` | Creates the business spec and observable acceptance criteria; rechecks ambiguous requirements against the final diff. Never designs the solution. | sonnet | medium |
+| `df-case-designer` | Testing role that writes the test spec in phase 2 (parallel to implementation) and grades the Tester's evidence against it in phase 3. Writes only its result file; never writes state. | sonnet | medium |
+| `df-comment-resolver` | Resolves one PR's new or changed feedback across every channel and author, fixes verified issues, answers other findings, and validates the current-head verdict. | sonnet | medium |
+| `df-dev-configurator` | Testing role for phase 3, and for phase 2's early run (--mode early). Prepares the route, its environment and the DEV data the test spec declares, records each one in the fixture manifest before writing it, and never touches production. | haiku | low |
+| `df-dev-tester` | Testing role for phase 3. Runs the spec paths in DEV through the environment the Configurator prepared (an ephemeral environment, shared DEV, in-cluster access or a local run from the worktree), driving the screen in a browser when a path names it, and returns raw evidence per path without grading it. | haiku | low |
+| `df-implementer-lite` | Implements a small approved pit-crew slice (router profile sonnet-medium) in one repo at medium effort, compiles it and runs the affected tests. Use only for a slice the router sized small; any other implementation goes to df-implementer, which also takes over when this one stays red: after one fix attempt it returns `build:"failed"` with the error in `blocked` and the orchestrator escalates. | sonnet | medium |
+| `df-implementer` | Implements an approved pit-crew change in one repo, compiles it, and runs added/changed plus nearby affected tests. Use for substantive implementation; small mechanical edits stay inline. | sonnet | high |
+| `df-investigator` | Triage role. Answers ONE question about a bug or about how something works today (a code path, DEV or PRD logs, DEV data) with located evidence and says whether it supports or refutes the hypothesis. Read-only; never concludes about the overall root cause and never fixes. | sonnet | medium |
+| `df-judge-recheck` | Phase-2 judge for rounds 2-3 and the final check of the judge loop, and the check of a comment resolver's unpushed grave fix (fix_delta). Confirms each previous finding against the fix diff and the current code, and attacks only the hunks the fixes changed. Read-only; never fixes, never sees the Builder's text. | opus | low |
+| `df-judge` | Adversarial phase-2 judge. Attacks the whole run's diff (every repo at once) against the ticket's intent, the acceptance criteria and the cross-repo contract, and returns evidenced findings. Read-only; never fixes, never trusts the Builder's report. | opus | medium |
+| `df-retro-publisher` | Use at a run's close, after retro_issues.cjs wrote a retro-issues/v1 file with publish true; the caller pastes that file's JSON and the tracker role into the prompt. Checks the entries' project exists and takes its lead team, then creates one tracker issue per entry in that team; never lists, searches or updates existing issues. | haiku |  |
+| `df-retro` | Writes an evidenced retro on the agent's environment (the pit-crew plugin and the agent-facing setup of each repo the run touched), early when the PRs open and final at the close, in the foreground for blocked, retried or surprising runs and otherwise in the background; its items become tracker issues. | sonnet | low |
+| `df-scout` | Locates code ownership, call sites, schemas and endpoints with file:line evidence. Read-only; never designs or fixes. | haiku |  |
+| `df-standards` | Pre-push standards pass over one repo's branch diff. Checks the changed lines against the repo's own rules, the universal checklists of the stack and the SQL checklist, and returns findings with their source and severity. Read-only; never fixes, never pushes. | sonnet | medium |
+| `df-ui-reviewer` | UI reviewer for phase 2 step 4 and before the mockups and the plan page are published. Finds the screens a diff touches, captures each in light, dark and 375px, critiques the images and the diff against the UX checklist, and returns severity-ranked findings grounded in the repo's own patterns. Never edits code. | opus | high |
+
+## Tools each agent may use
+
+| Agent | Tools |
+|---|---|
+| `df-architect` | all |
+| `df-business-analyst` | Read, Grep, Glob, Bash, Agent, AskUserQuestion, Write |
+| `df-case-designer` | Read, Grep, Glob, Bash, Write |
+| `df-comment-resolver` | Read, Write, Edit, Grep, Glob, Bash, Skill, Monitor |
+| `df-dev-configurator` | all |
+| `df-dev-tester` | all |
+| `df-implementer-lite` | Read, Write, Edit, Grep, Glob, Bash, Skill |
+| `df-implementer` | Read, Write, Edit, Grep, Glob, Bash, Skill |
+| `df-investigator` | all |
+| `df-judge-recheck` | Read, Grep, Glob, Bash |
+| `df-judge` | Read, Grep, Glob, Bash |
+| `df-retro-publisher` | all |
+| `df-retro` | Read, Grep, Glob, Bash, Write |
+| `df-scout` | Read, Grep, Glob, Bash |
+| `df-standards` | Read, Grep, Glob, Bash |
+| `df-ui-reviewer` | Read, Grep, Glob, Bash, Write |
+
+---
+
+<small>Generated from pit-crew `42bde34` (core 6.1.0) by `scripts/gen-reference.mjs`. Do not edit by hand.</small>

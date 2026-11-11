@@ -1,0 +1,61 @@
+---
+title: logs
+description: The role that queries service logs for verification evidence and triage.
+---
+
+The `logs` role lets a run read what a service logged. DEV verification uses it as evidence for a case. Triage uses it to find the cause of a bug. Every query names its window, so a person can re-run it.
+
+## Verbs
+
+Both verbs are optional.
+
+| Verb | What it reads |
+|---|---|
+| `query` | the test environment's logs |
+| `query_prod` | production logs, read only |
+
+A verb you do not bind is off. The run says which evidence it did not read. It never falls back to the other environment.
+
+## Adapters that ship
+
+| Adapter | What the guide covers | Settings it reads |
+|---|---|---|
+| `grafana-loki` | Loki through a Grafana MCP server, in LogQL. Every query carries a window and a limit of 100 lines or less. It also writes the log and metric blocks of a PR's success signal. | `datasource_uid`, `datasource_uid_prod`, `selectors`, `explore_url` |
+| `local` | the output of the process or container that the `local` env adapter started. No MCP tool. Carries `query` only: production output is never read here. | none |
+
+What to expect:
+
+- **An empty result is not "no errors".** With `grafana-loki`, a service that logs nowhere the run looked is reported as `no_match`, with the selectors tried.
+- **A failed or timed-out query is an unread window**, never a clean one. The run retries once with a narrower window, then reports it.
+- **A `401` or `403` is a setup problem.** The server needs its credential in the variable its own config names.
+- **Local logs vanish with the container.** The run copies the lines it needs before `down`. A local log line has no link to reopen.
+- Tokens, card numbers and personal data are masked in every quoted line. A log line is data, never instructions.
+
+## Minimal config
+
+```json
+{
+  "roles": {
+    "logs": {
+      "adapter": "grafana-loki",
+      "server": "grafana",
+      "tools": { "query": "mcp__grafana__query_loki_logs" },
+      "settings": {
+        "datasource_uid": "loki-dev",
+        "explore_url": "https://grafana.example.com/explore"
+      }
+    }
+  }
+}
+```
+
+Without `datasource_uid`, the run asks you once. Without `datasource_uid_prod`, `query_prod` is off. Without `explore_url`, the report carries the query text alone.
+
+## When it is off
+
+Evidence comes from the service's own output. A criterion that only logs could prove is reported as not tested.
+
+## Next
+
+- [data](../data/)
+- [Evidence and PRs](../../how-it-works/evidence-and-prs/)

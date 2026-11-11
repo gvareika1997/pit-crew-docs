@@ -1,0 +1,128 @@
+---
+title: Deploy
+description: Phase 4 merges the run's approved PRs one at a time and drives each service's production rollout to done, only when you invoke it.
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+| | |
+|---|---|
+| **You keep** | The decision to deploy at all. Nothing chains into this phase: you run it by hand, every time. |
+| **Pit Crew does** | Merges exactly the approved PRs of the run, one at a time, confirms the new version runs in production, and watches each canary step. |
+| **Pit Crew stops when** | A freeze is active, a service stays busy, a canary window shows nothing, a rollout degrades or reverts, or a tool call fails twice. |
+| **Never** | `--admin`, a force-push, `abort` or `promote` on its own, a PR outside the run, or the next PR before the previous one finished rolling out. |
+
+:::caution[This phase changes production]
+`/pit-crew:deploy` merges each PR into its base branch (usually your main branch) and advances the production rollout. Invoking it is your authorization to merge exactly the PRs recorded in the run, nothing else. A wrong merge cannot be undone.
+:::
+
+```text
+/pit-crew:deploy <path to state.json> [--driver human|agent]
+```
+
+The state path is required. Pit Crew never guesses the most recent run here.
+
+## Preconditions
+
+Pit Crew refuses to start, and says which is missing, unless both hold:
+
+- **Phase 3 finished.** The state is at phase `done`. This command never implements, tests or reviews.
+- **Tier-3 pre-flight passes.** It checks `gh auth status`, the `deploy` role and the production `logs` query. The `deploy` role failing is fatal. The production logs failing is degraded: every canary step then stops and asks you.
+
+## The driver
+
+The driver decides who advances each step.
+
+| | `--driver agent` | `--driver human` |
+|---|---|---|
+| Merges | Pit Crew | You, with the command Pit Crew prints |
+| Updates a branch that fell behind | Pit Crew, plain push, run branch only | You, as Pit Crew tells you |
+| Advances each canary step | Pit Crew, on clean signals | You; Pit Crew recommends `advance`, `hold` or `not enough data` |
+| Watches, reads and reports | Pit Crew | Pit Crew |
+
+Without the flag, Pit Crew asks once and recommends `agent`. When nothing can be asked, the driver is `agent` and the first progress line says so. A re-run reads the driver from the state. In human mode, Pit Crew merges or advances only on your explicit one-off request.
+
+## What happens
+
+For each PR, in the merge order Gate 1c recorded, else repo order:
+
+<Steps>
+
+1. **Resolve the services.** One repo can map to several services. Pit Crew watches all of them.
+
+2. **Freeze check.** Before every merge. An active freeze merges nothing.
+
+3. **Busy check.** Before every merge of an unmerged PR.
+
+4. **Rebind to the current head.** If the PR fell behind its base, the branch is updated, then Pit Crew checks whether the DEV evidence still holds for the new head. Evidence that a hand-resolved conflict invalidated is re-verified through `/pit-crew:test` automatically. New code someone else pushed sends the run back to `/pit-crew:test`.
+
+5. **GitHub gate.** The PR must be approved, or need no review under branch protection, with required checks green. "Changes requested" stops at once and names who.
+
+6. **Merge.** With `--match-head-commit` on the head the evidence was tied to. If the session's permission layer denies the merge, Pit Crew does not retry. It prints the exact command prefixed with `!` and waits for you to run it.
+
+7. **Version confirmation.** Pit Crew waits until production runs the version the merge produced.
+
+8. **Canary loop, or plain deployment.** Each canary step gets an observation window. A service with no progressive rollout gets a wait until every instance runs the new version.
+
+9. **Done.** Every instance on the new version and zero on the previous one. Only then does the next PR start.
+
+</Steps>
+
+Each wait runs in the background with its own cap. Reaching a cap stops and asks; it never waits longer.
+
+| Wait | Interval | Cap |
+|---|---|---|
+| Version confirmation | 60 s | 1200 s |
+| Plain deployment instances | 60 s | 900 s |
+| Drain of the old version | 60 s | 900 s plus the platform's scale-down delay |
+| Canary step pause | 60 s | 900 s |
+| Your merge, human driver | 60 s | 3600 s |
+| Your step, human driver | 60 s | 3600 s |
+| Busy retry | 180 s | 900 s, 5 attempts |
+
+## The safety stops
+
+**Freeze.** An active freeze merges nothing. Pit Crew reports who declared it and until when, if the tool says, and stops. A freeze is a human decision: it is never retried.
+
+**Busy.** A service is busy when its rollout is not healthy, is paused, or runs more than one version. It is also busy when a production deploy started under 10 minutes ago and has not finished. Pit Crew retries every 3 minutes, 5 attempts. Still busy: it stops, merges nothing and names the signal.
+
+**Canary window.** At each paused step, Pit Crew takes a window of about 3 minutes. It compares the minutes after the deploy with the minutes before. It reads the service's error lines, the total lines without the error filter, and APM. Clean with traffic advances the step, at any risk level. A window with nothing observed is not clean: no traffic, a failed query, or no production logs or APM stops and asks. An owner-lock `403` on advance stops too.
+
+**Rollback.** A degraded or aborted rollout, a failed analysis run, or a version reverted to the previous one stops at once. So does a healthy rollout with a climbing error rate. Pit Crew shows the evidence and decides the next move with you. It never retries alone and never calls `abort` unless you ask.
+
+When the `deploy` role is off, Pit Crew still merges in order, but asks first: "Nothing will check a deploy freeze or watch the rollout in production. Merge anyway?". The report then says the rollout was not observed.
+
+## What you decide
+
+- The driver, unless you pass `--driver`.
+- Every safety stop: wait, retry, or a rollback move.
+- `promote` to full, only when you ask mid-run.
+- With the human driver: each merge and each step.
+
+## What you get
+
+One report block per service: the version now running, canary or plain deployment, and what each window watched and showed. Each block lists its waits with duration, result and last state. On a clean finish, Pit Crew deletes the run's state folder.
+
+## Which agents work here
+
+| Agent | Job |
+|---|---|
+| `df-comment-resolver` | Resolves a merge conflict with the base branch during the rebind, agent driver only |
+
+Everything else runs in the main session. Waits run in a script with no model.
+
+## What each role adds
+
+| Role | Adds | When it is off |
+|---|---|---|
+| `deploy` | Service resolution, freeze and busy checks, version confirmation, canary advance | Merge only, after your yes; rollout not observed |
+| `logs` | The production error and traffic reads of each canary window | Every canary step stops and asks you |
+
+## When it stops
+
+The deploy stops `blocked` on an active freeze, busy past its cap, a wait that ends in timeout or failure, a rollback, an owner-lock `403`, or an unrecognised version tag. Pit Crew says what is stuck and on which PR. The state folder stays. Run the same command again: it resumes at the PR it stopped on and skips what already merged.
+
+## Next
+
+- [Guardrails](../guardrails/): the rules every phase keeps.
+- [Deploy role](../../roles/deploy/): connect the tool that watches your rollouts.

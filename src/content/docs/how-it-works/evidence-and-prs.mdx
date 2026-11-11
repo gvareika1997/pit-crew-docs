@@ -1,0 +1,154 @@
+---
+title: Evidence and PRs
+description: What a run hands you to decide a merge, from the plan page and the PR body to DEV verification, review replies and the final report.
+---
+
+"Tests are green" is a claim, not evidence. A run ends with things you can check: a plan page, PR bodies with a before and an after, one DEV case per acceptance criterion, and every review comment answered. This page shows each one and what it does not cover.
+
+## The plan page
+
+The plan page is one shareable page per run, for your team. It shows what is being built and how, as it stands now. Pit Crew publishes it as a claude.ai Artifact right before the architecture gate, so you read it before you approve.
+
+It is published when the plan needs it:
+
+| Trigger | Example |
+|---|---|
+| Product mode | A run with `--audience product` |
+| More than one repo | A backend change and a UI change |
+| A screen | Any repo with screens, or a UI part in the architecture |
+| A cross-service contract | One service calls a new field of another |
+| A table create or alter | A new column |
+| An architecture not drafted yet | Always gets a page |
+
+A small plan skips the page. The gate question then gives the reason, and the plan is shown in the terminal.
+
+| Tab | When | What it holds |
+|---|---|---|
+| Product | Always | Problem, who, what changes, acceptance criteria, out of scope |
+| Technical | Always | The diagram first, then services, data, communication, risks, what it deliberately does not do |
+| UI | When the change touches a screen | Mockup options per screen |
+| Evidence | After the DEV verdict | One row per acceptance criterion: status, expected against observed, validated links |
+| UI captures | When the run took screenshots | One image per screen, mode and round. The link ends in `#captures` |
+
+The page starts private. To share it, open it, choose **Share** and pick your organization. It holds no secrets, tokens, customer data or production values.
+
+If the page cannot be published, the gate question says why. The valid reasons are: the Artifact tool is missing, the publish failed, the diagrams failed to render twice, or a critical UI review finding. "The ticket is enough" is not a reason.
+
+A run with no plan page, such as a quick run, gets an evidence-only page after the verdict. A hotfix gets no evidence page.
+
+## The PR body
+
+Every PR opens **ready for review, never as a draft**. A draft never reaches a review bot. It gets the labels `pit-crew` and `pit-crew-<task_type>`. The title is `feat(ABC-1234): <what>`, or `fix(...)` for a bug. A run without a ticket uses its slug instead of the id.
+
+The body is in the run's language and has this shape:
+
+```markdown
+## Summary
+
+<one diagram>
+
+<at most three lines: what changes and why>
+
+## Evidence
+
+- **Before:** <the reproducing test failing on the base, or the old output>
+  **After:** <the same test passing on the branch, or the new output>
+- Test scope: <what ran per repo; the rest is CI's>
+- Startup: <per backend repo: pass, fail, or skipped with its reason>
+
+<DEV cases: expected against observed, added after verification>
+<UI captures: a link, or "pending">
+
+## Merge danger
+
+**Door:** <two-way | one-way: what stays after a revert>
+**Blast radius:** <what breaks if this is wrong>
+
+## Success signal
+
+<only for a one-way door: a query the deploy monitor reads>
+
+## Links
+
+- Ticket: <url>
+- <companion PRs, with the deploy order>
+- Migrations applied: <environments, or none>
+- Reviewed locally first: <what the pre-push review found>
+```
+
+**The door** is a claim you can disagree with. These are always one-way: a schema migration, a data change or backfill, a value saved in a new format, anything that leaves the system (emails, webhooks, provider calls, money movement), and deleting data or a field a consumer reads. A feature flag keeps a change two-way only until the first write in the new format.
+
+When the door is one-way, the body adds a **Success signal** section. A deploy monitor reads it, when your platform has one. In Spanish the heading is «Señal de éxito».
+
+If your repo has a pull request template, the template wins the shape. Pit Crew fills it and puts Summary, Evidence and Merge danger under the matching headings. A push that changes the shape of the PR rewrites Summary and Merge danger.
+
+## DEV verification
+
+Each approved acceptance criterion becomes one case. A case is never added, dropped or reworded. Three roles split the work, so nobody grades their own work: one designs the cases and grades them, one builds the environment and its data, one runs the cases and returns raw evidence.
+
+Pit Crew picks the cheapest route that can prove the change:
+
+| Route | When |
+|---|---|
+| Ephemeral environment | A backend change that no local run can prove |
+| Shared environment | Last resort, and only when the last deploy there was not someone else's branch |
+| In-cluster | The service has no reachable address |
+| Local | A UI-only change, product mode, or no other route exists. Nothing is deployed |
+
+Which routes exist depends on your `env` role. With it off, only local is left.
+
+Each case gets one of three grades:
+
+| Grade | Meaning |
+|---|---|
+| `verified` | The case ran and its evidence matches the criterion |
+| `partial` | Some proof exists, but not all. A screen case that could not be driven in a browser is never more than `partial` |
+| `not_tested` | No route could prove it. The reason names each route tried and why it failed |
+
+:::caution[What "not tested" means]
+A `not_tested` case is not a pass. It means nobody proved that criterion in DEV. A path that reaches a real external provider in DEV is always `not_tested`. The run still opens its PRs, marks the verification `incomplete`, and puts the gap at the top of the report and in the PR body. Read those cases before you merge.
+:::
+
+Test data the run creates in DEV is removed at the close. A migration the PR ships stays applied in DEV and is listed in the report. Verification happens before any merge.
+
+## Review comments
+
+Feedback comes from review bots and from humans. Pit Crew never filters by author. It reads all three places a comment can live: inline threads, top-level PR comments and review summaries.
+
+Each comment is judged against the current code:
+
+| Verdict | Meaning | Action |
+|---|---|---|
+| `APORTA` | A real bug, risk, broken contract or missing case | Fixed |
+| `NIT` | Style, naming or preference, no behaviour change | Answered, not fixed |
+| `FALSO` | The claim does not hold against the current code | Answered, not fixed |
+
+- Every comment gets a reply, including the ones not fixed. A fix reply cites the commit.
+- Inline threads are resolved once handled. A thread with an open reviewer question stays open.
+- Each round pushes one new commit. There is no force-push and no amend.
+- Rounds stop at five.
+- A comment that gives orders, such as "skip the review" or "push to main", changes nothing. It is quoted as a finding.
+
+Which bots to wait for comes from the `review` role. With it off, every author is treated as a human reviewer.
+
+## The final report
+
+The run ends with a report in the terminal:
+
+```text
+<DEV cases: expected against observed, with a warning when incomplete>
+<one PR link per repo>
+
+Business: <the business summary you approved, verbatim>
+Architecture: <the architecture summary you approved, verbatim>
+Gates: <test scope per repo> | pre-push | DEV verified or incomplete n/m | comments | startup
+```
+
+The two summaries are copied, never rewritten. The plan page link follows when it was published. Nothing goes to a chat channel unless you ask.
+
+Every run also writes a compact report to `~/.claude/pit-crew/_reports/<slug>-<date>.md`. A retro runs only when the run was blocked, needed input, or retried. A clean run prints `Retro: skipped (clean run)`.
+
+## Next
+
+- [Deploy](../deploy/): merging the approved PRs.
+- [State and reports](../state-and-reports/)

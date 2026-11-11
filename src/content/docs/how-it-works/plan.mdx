@@ -1,0 +1,109 @@
+---
+title: Plan
+description: Phase 1 turns a request into an approved business spec, a ticket and an approved architecture, with your approval at each gate.
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+Most bad pull requests come from a misunderstood request, not from bad code. Phase 1 fixes that before anyone writes code. You start it with one command:
+
+```text
+/pit-crew:plan [what you want to build | path to state.json] [--auto] [--no-triage] [--tracker <provider>] [--audience dev|product]
+```
+
+Give it a ticket id, a precise prompt or a raw report. A good prompt says what, where and for whom: **"integrate provider X in service Y to process payins in countries Z"**, not **"integrate X"**. Pass an existing `state.json` path to resume a run: Pit Crew says where it stands and continues from the first unfinished step.
+
+| Flag | Effect |
+|---|---|
+| `--auto` | Skips the task-type question. It does not skip a gate. |
+| `--type <t>` | Sets the task type (`full`, `quick` or `hotfix`) so it is not asked. |
+| `--no-triage` | Skips the triage a bug run does before planning. |
+| `--tracker <provider>` | Picks the tracker. A read-only secondary tracker only reads an existing ticket id. |
+| `--audience dev\|product` | `product` runs guided mode for non-technical people. The `PIT_CREW_AUDIENCE` variable sets the same. |
+
+## What happens
+
+<Steps>
+
+1. **Bootstrap.** Pit Crew creates the run's state file at `~/.claude/pit-crew/<slug>/state.json`, outside every repo. The slug is the ticket id in lower case, or a short kebab name. It detects your language and uses it for every message, ticket and PR. Then it asks the task type: `full`, `quick` or `hotfix`. See [Lanes](../lanes/).
+
+2. **Tier-1 pre-flight.** It checks `git`, `node`, `jq`, `gh auth status`, the agents your session loaded and each connected tool. You get one consolidated report: what is missing, how serious it is for this run, and what you lose. It also prints one line naming every role that is off.
+
+3. **Triage, when the request is a bug.** A bug ticket, or a raw report from someone else, gets a read-only investigation first. A `quick` or `hotfix` run gets the quick depth, a `full` run the full one. See [Triage](../triage/).
+
+4. **Business (step 1a).** Pit Crew looks up your company knowledge base. Then `df-business-analyst` reads the code and interviews you about the business only: who, which scope, money, failures, edge inputs, what users see, rollout and support. It drafts a spec of one page at most, with observable acceptance criteria.
+
+5. **Gate 1a.** You approve the business spec. Technical questions, even "which service", wait until this gate passes.
+
+6. **Ticket (step 1b).** Pit Crew creates the issue in your tracker with the approved spec, or reads the one you gave. It files it in an existing project and milestone. It never creates a project, and it never reassigns or reprioritizes an existing issue silently.
+
+7. **Architecture (step 1c).** Pit Crew drafts the design inline when the pattern is known and stays in one repo. It dispatches `df-architect` when ownership is unclear, several designs are viable, or the change touches schema, infrastructure or a cross-service contract. Open design decisions are asked before the decision table, so the table shows answers, not options.
+
+8. **Tier-2 pre-flight.** Before you see the table, Pit Crew checks each repo the design names: the clone, its toolchain, and the connections this design needs. A failed check stops the run here, before you spend the gate.
+
+9. **Plan page and Gate 1c.** When the run requires it, Pit Crew publishes a shareable plan page with Product and Technical tabs, and the architecture diagram in the Technical tab. The gate question carries its link. You approve the architecture.
+
+10. **Workspace and hand-off.** Pit Crew records one git worktree per repo. Then it probes whether the session can write. If it can, it continues into [Dev](../dev/) without asking, with or without `--auto`.
+
+</Steps>
+
+A `quick` or `hotfix` run has a single gate, labelled "Gate 1c", and no plan page. A `quick` run still does the business interview.
+
+## What you decide
+
+| Decision | When |
+|---|---|
+| Task type | At the start, unless `--type` or `--auto` |
+| Answers to real questions | During 1a and before the 1c table |
+| Approve the business spec | Gate 1a |
+| Project or milestone | Step 1b, only when no project clearly fits |
+| Continue without a ticket, or cancel | Step 1b, when the tracker is off or the create fails |
+| Approve the architecture | Gate 1c |
+
+Every question puts the recommended option first and ends with a fixed "I don't understand" option. Picking it gets you a new explanation with an example, and the same question again. Points the code or the conversation already settles are not asked: they appear in a "Closed without asking" block, each with its source. To reopen one, pick "Approve except…" and name it.
+
+## What you get
+
+- The state file, `~/.claude/pit-crew/<slug>/state.json`. Never edit it by hand.
+- A ticket in your tracker, with the branch name in the tracker's casing.
+- An approved business spec and acceptance criteria.
+- An approved decision table: services, tables, communication, contracts and risks.
+- A plan page link, when the run requires one.
+- A two-line recap at each gate: one business line, one architecture line.
+
+## Which agents work here
+
+| Agent | Job |
+|---|---|
+| `df-investigator` | Answers one triage question with located evidence, on a bug run |
+| `df-business-analyst` | Interviews you and writes the business spec and acceptance criteria |
+| `df-scout` | Locates code ownership, call sites, schemas and endpoints with `file:line` evidence |
+| `df-architect` | Designs ownership, data changes, communication, contracts, risks and Builder slices |
+
+All four are read-only. None writes code. See [Agents](../../reference/agents/).
+
+## What each role adds
+
+| Role | Adds in this phase | When it is off |
+|---|---|---|
+| `tracker` | Reads or creates the ticket | The run goes without a ticket |
+| `docs` | Company-knowledge lookup before the business draft, and fixes to stale pages | The lookup is recorded `unavailable`; no page fixes |
+| `data` | Reads the real schema before designing | The design relies on code alone |
+| `env`, `logs` | Tier 2 probes them against this design | Their routes are recorded as lost |
+| `stack` | Tier 2 checks the toolchain each repo declares | Always on |
+
+A rule the knowledge base does not hold is reported as "not in the knowledge base". It becomes an open question or an assumption you confirm, never an invented company rule. See [Roles](../../roles/).
+
+## When it stops
+
+- **A fatal pre-flight row.** For example, `jq` is missing, or an agent did not load. Fix it as the row says, then run the command again. A missing agent needs a session restart.
+- **The tracker is down** and you gave a ticket id, or the run is a `hotfix`. Connect the tracker, guided by `/pit-crew:setup`.
+- **Triage says "not a bug".** You choose: close with a reply ready to paste to the reporter, continue as a feature, or continue anyway.
+- **Tier 2 fails.** The row names the fix. Credentials are yours to set: Pit Crew never asks for a value.
+- **The session cannot write.** Plan mode or closed permissions make the probe fail. Pit Crew prints the state path and the exact `/pit-crew:dev <state-path>` line. Run it from a session that can write.
+- **Guided mode with IT review waiting.** The run stops until IT answers. See [Product mode](../product-mode/).
+
+## Next
+
+- [Dev](../dev/): what happens after you approve Gate 1c.
+- [Lanes](../lanes/): how `full`, `quick` and `hotfix` change this phase.

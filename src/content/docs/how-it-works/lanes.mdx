@@ -1,0 +1,101 @@
+---
+title: Lanes
+description: How the full, quick and hotfix task types and the light lane set how much of the pipeline a run walks.
+---
+
+Not every change deserves two gates and a plan page. Before planning, a run settles its **task type**: `full`, `quick` or `hotfix`. The type sets how many gates you get, which agents run, how much is tested and what happens after the PR. `quick` and `hotfix` take the shape of the **light lane**, with their own limits.
+
+## The three task types
+
+| | `full` | `quick` | `hotfix` |
+|---|---|---|---|
+| Use it for | features, anything with a design to discuss | small, clear changes | urgent fixes, any size |
+| Human gates | 1a and 1c | one, labelled Gate 1c | one, labelled Gate 1c |
+| Business interview | yes, with its own gate | yes, without a gate | no |
+| Plan page | when the change needs one | no | no |
+| Architect | yes | no: the architecture is drafted inline | no |
+| Repos and contracts | as routed | several repos and a one-field contract change; no table create or alter | all allowed |
+| Test scope | sized per repo | `touched` | `touched`: build and existing tests on touched code, no new tests, no e2e |
+| Adversarial judge | yes | skipped | skipped |
+| Pre-push review | standards pass, then the secret scan | same | secret scan only; the money-path review rules stay |
+| DEV verification | as routed | as routed | none: every case is not tested, reason "validate in prod" |
+| Branch | the ticket's branch | the ticket's branch | `hotfix/<id>` |
+| Follow-up ticket | no | no | yes |
+
+Every type keeps the preflight, fresh ground truth, the worktree, the PRs and PR comment resolution. Production stays read-only and deploy stays manual.
+
+A `hotfix` run closes `incomplete` by design, since nothing is verified in DEV. After its PR exists, it opens a second ticket linked to the original. That ticket asks to redo the change properly, with the tests and improvements the hotfix skipped, and it lists what was cut.
+
+## How the type is chosen
+
+The first rule that matches wins:
+
+1. You pass `--type hotfix`, `--type quick` or `--type full`, or start the request with `Hotfix:`, `Quick:` or `Full:`. The run uses it and does not ask.
+2. You pass `--auto`. The run takes the router's recommendation without asking, except for `hotfix`, which it still asks about. A text match never lowers the gates on its own.
+3. Otherwise the run asks once, right after its recap of what it understood.
+
+The question lists three options, with the recommended one first and its reason:
+
+| Option | Meaning |
+|---|---|
+| Hotfix | Urgent, any size. Minimum tests, validated in production. |
+| Quick & Dirty | Small and known. Little plan, few tests. |
+| Full | The whole pipeline. |
+
+The recommendation comes from the request text. An urgency word, or a failure word near a production word, suggests `hotfix`. A trivial request that is not high-stakes suggests `quick`. Everything else suggests `full`. A product run never gets the question: it is always `full` ([Product mode](../product-mode/)). A resumed run is never asked again, except one a standalone triage started.
+
+You can correct the type until Gate 1c is approved. Moving a `hotfix` to `quick` or `full` reopens the business interview. The Gate 1c recap names the type.
+
+### Quick and money
+
+If you choose `quick` and the request or its criteria mention money, the run warns you once before Gate 1c. It shows what `quick` gives up:
+
+1. one gate only, with no separate plan gate;
+2. no architect: the architecture is drafted inline;
+3. no adversarial judge.
+
+You then pick **Continue in Quick** or **Switch to Full**. Both are valid. Under `--auto` nothing can be asked, so the run shows the three losses and continues in `quick`. This warning is for `quick` only. A hotfix is you asking for speed on purpose.
+
+## The light lane
+
+The light lane drops the plan ceremony and keeps every check on the code. A run takes it when:
+
+- the router judged the request trivial and not high-stakes; or
+- the design is already in the conversation, because you said what and how, or a ticket carries the decisions.
+
+A run is never light for:
+
+- money, auth, production or an irreversible step;
+- a schema change or a cross-service contract;
+- more than one repo;
+- a request for the full plan.
+
+On the light lane, the run drafts business and architecture from the conversation, verbatim where you decided. It asks once, as Gate 1c, with both recap lines and one line naming what came from the conversation. A "Closed without asking" block sits above the question, and you can answer "Approve except...". There is no plan page and no architect. The ticket and the per-repo routing still happen.
+
+What does not change: the knowledge-base lookup, the preflight, implementation, review, the secret scan, the routed tests, the PRs, DEV verification of every criterion and comment resolution. The three testing roles still write a spec before anything runs in DEV. A hotfix skips that part.
+
+### When the work outgrows the lane
+
+A second repo, a schema change or a contract nobody mentioned stops the light lane. The run switches to `full`, publishes the plan page and asks Gate 1c again under the full rules. The merge step also refuses to approve a light run with more than one repo, a table create or alter, or a cross-service contract. The lane never quietly approves a large uncertain change.
+
+## Bugs on any lane
+
+A bug runs a read-only triage before the recap. Its depth follows the type: `hotfix` and `quick` get a quick triage, `full` gets a full one. Pass `--no-triage` to skip it. If the triage concludes "not a bug", the run stops and asks. You can close with a reply ready for the reporter, continue as a feature, or continue anyway. See [Triage](../triage/).
+
+## Situation to lane
+
+| Situation | Lane |
+|---|---|
+| A new feature, or anything with a design to discuss | `full` |
+| A schema change, a cross-service contract or several repos with new tables | `full` |
+| Money, auth or an irreversible step | `full` (choosing `quick` with money triggers the warning above) |
+| A small change you can already describe in one line | `quick` |
+| A one-repo change whose design you already wrote in the chat | `quick`, on the light lane |
+| Production is broken and the fix cannot wait | `hotfix` |
+| You are not technical and want to describe a business need | `full`, in [product mode](../product-mode/) |
+| You are unsure | `full` |
+
+## Next
+
+- [The flow](../the-flow/): what happens in each phase.
+- [Guardrails](../guardrails/): what no lane ever does.

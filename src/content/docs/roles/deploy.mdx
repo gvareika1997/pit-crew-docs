@@ -1,0 +1,66 @@
+---
+title: deploy
+description: The role that lets phase 4 observe a production rollout and, when your tool allows it, advance it.
+---
+
+The `deploy` role connects `/pit-crew:deploy` to the tool that ships your code. With it, phase 4 checks whether a deploy is already in flight, checks for a freeze, and watches the rollout after each merge. With a tool that has rollout control, it can also advance, promote or abort.
+
+## Verbs
+
+The two required verbs are in bold. A binding without one of them shows as `partial`.
+
+| Verb | What it is for |
+|---|---|
+| **`rollout_status`** | read the state of the rollout |
+| **`deploys`** | list recent deploys, to see if one is in flight |
+
+Optional: `service`, `services`, `freeze`, `apm`, `health`, `advance`, `promote`, `abort`, `sbom`.
+
+Bind a rollout action such as `advance`, `promote` or `abort` with `access: "orchestrator"`. Then only the main session can call it.
+
+## Adapters that ship
+
+| Adapter | What the guide covers | Settings it reads |
+|---|---|---|
+| `github-actions` | a repository whose default branch deploys through GitHub, a workflow on push or a deployment an app reports. Observes through `gh`. No MCP tool. Carries `service`, `freeze`, `deploys` and `rollout_status`. | `environment`, `workflow`, `freeze_check` |
+
+Be clear about what `github-actions` cannot do:
+
+- **No rollout control.** `advance`, `promote` and `abort` are off. A canary, when one exists, runs unwatched.
+- **No traffic, error rate or latency.** `apm` and `health` are off. Production logs come from `logs.query_prod` when that is bound.
+- **No running version.** A deployment status of `success` means the workflow finished, not which version serves traffic.
+- **No freeze** unless you set `freeze_check`, a command that exits non-zero while deploys are frozen.
+
+Its sequence per PR: wait for any deploy in flight, require green checks, merge, watch the merge commit's workflow runs, then read the deployment status. A failing run, or a `failure` or `error` status, stops and asks you. A deploy through this adapter ends as "merged, checks green, deployment state", never as "rolled out and verified".
+
+:::caution[Merging is deploying]
+Merging to the deploy branch is itself a deploy. Verification happens before the merge, in phase 3, never after.
+:::
+
+## Minimal config
+
+```json
+{
+  "roles": {
+    "deploy": {
+      "adapter": "github-actions",
+      "settings": {
+        "environment": "production",
+        "workflow": "deploy.yml",
+        "freeze_check": "./scripts/is-frozen.sh"
+      }
+    }
+  }
+}
+```
+
+Without `environment`, the adapter uses `production`. Without `workflow`, it reads every workflow run of the merge commit.
+
+## When it is off
+
+`/pit-crew:deploy` merges one PR at a time and stops. The rollout is reported as not observed.
+
+## Next
+
+- [events](../events/)
+- [Deploy](../../how-it-works/deploy/)

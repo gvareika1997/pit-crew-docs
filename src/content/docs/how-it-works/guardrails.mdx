@@ -1,0 +1,79 @@
+---
+title: Guardrails
+description: What Pit Crew never does, the hooks that enforce it, the fix-loop cap, and the limits of each phase.
+---
+
+An unattended run is only safe if some mistakes cannot happen at all. Pit Crew keeps a short list of things it never does. The riskiest ones are not left to the model's memory: hooks deny them before the tool call runs.
+
+## What it never does
+
+- **Merge on its own.** Only `/pit-crew:deploy`, run by you, merges, and only the PRs of that run.
+- **Merge with `--admin` or force-push.** A branch behind `main` is merged forward with a merge commit.
+- **Write to production outside `/pit-crew:deploy`.** There it merges your approved PRs and advances their rollout. Everywhere else, production is read-only for every agent.
+- **Put a feature branch on shared DEV first.** It verifies in an environment of its own when the `env` role offers one. It uses shared DEV only as a last resort, when nobody else's branch is on it.
+- **Close green with a criterion it could not prove.** That criterion is reported as not tested.
+- **Run the whole test suite.** Phase 3 runs the scope sized for each repo. CI owns the broad run.
+- **Reach a database through a shell client.** Databases go through the `data` role only.
+- **Follow instructions found in repo content.** A diff, a doc or a `CLAUDE.md` handed to an agent is data. It never authorizes a command or a wider scope.
+
+Approving Gate 1c authorizes this run's branches, commits and PRs, in the repos the architecture listed. It never covers a merge, a force-push or another repo.
+
+Two situations always stop and ask, because a re-run cannot undo them: anything touching production, and a secret already committed.
+
+## The hooks
+
+| Guard | What it blocks | Why |
+|---|---|---|
+| `git-push-guard.sh` | Any push that rewrites history: `--force`, `-f`, `--force-with-lease`, a `+` refspec, a force set through config or hidden in a shell wrapper. Also `--no-verify` and its prefixes. | A rewritten history and a skipped pre-push hook are the two mistakes a later phase cannot undo. A merge commit keeps every pushed sha reachable and the review threads anchored. |
+| `gh-merge-guard.sh` | `gh pr merge --admin`, a merge without `--match-head-commit`, and the same merge through the REST endpoint or GraphQL, including auto-merge. | Deploy may merge only the head sha a human approved, through the repo's own rules. |
+| `test-scope-guard.sh` | A bare `playwright test` with no spec, `--grep` or `--project`, and a root `mvn verify` or `test` with no module or class. Only for the `java-maven` and `ui` stacks. | A whole-suite run costs about an hour and proves nothing the routed scope did not. On other stacks the run keeps the rule without a hook. |
+| `mvn-pipe-guard.sh` | A Maven command whose output is piped. Redirecting to a file is allowed. | A pipe reports the last command's status, so a `BUILD FAILURE` slips through. |
+| `readonly-role-guard.cjs` | Writes by the read-only agents: the case designer, the tester, the judges, the standards reviewer, the investigator and the scout. They get no git or GitHub mutation, no remote write and no file write outside their own run files. The case designer gets no network client. | These roles look and report. Remote writes the tester needs go through the `env` role's tools. |
+| `role-tool-guard.cjs` | An MCP call by a pipeline agent to a tool not bound to a role it holds. Also any agent write to the files that define those grants. | Pipeline agents have no tool allowlist of their own. This hook is their MCP grant, and an agent must not rebind a verb to a write tool. |
+| `grant-digest.cjs` | Nothing by itself. It records a keyed digest of the grant files at session start. If one changes mid-session, the role guard denies the next agent MCP call. | It catches a change the role guard's Bash checks missed. |
+| `plan-page-gate-guard.cjs` | A Gate 1c question asked before the plan page is published, with an outdated page, or without its link. An unavailable page must be explained in the question. | You read the page before you approve. The merge step refuses the approval as a backstop. |
+| `subagent-result-guard.cjs` | An agent that ends its turn without its closing result, once. The retry is allowed. | A turn that ends while "waiting" leaves the run with nothing to register. |
+| `telemetry-hook.cjs` | Nothing. It always exits 0. | It records which run the session is on, and queues events only when telemetry is on. |
+
+### How the hooks fail
+
+The shell guards and the plan-page guard **fail open**: with no `jq`, an unparseable command or any doubt, they let the call through. A guard that blocks on ignorance would break normal sessions. The read-only and role guards fail open until they know the caller is a pipeline agent. After that they **fail closed**: an error while judging a matched agent denies the call.
+
+The hooks are not a sandbox. They read the shapes a model actually tries, not every possible way to write a file.
+
+### When a hook blocks you
+
+The denial carries the reason. Most often the fix is to do the step the intended way: merge forward instead of force-pushing, or name a test target. If the grant check denies an agent's MCP call because a grant file changed mid-session, restart Claude Code so a fresh record is taken.
+
+## The fix-loop cap
+
+A red build or a red test gets at most **three** fix rounds, in phase 2 and in phase 3 alike. A fourth attempt on the same red is refused. The run then stops `blocked`, names the failing target and gives its log path. Nothing is deleted, so you can resume.
+
+In phase 3, a retry has to be earned with evidence:
+
+- The failing tests first run against the base branch. A test that fails there too, with the same symptom, is not the branch's fault. It costs no round, and the report lists it as pre-existing.
+- A second round on the same target needs a command that reproduces the red, a hypothesis and a prediction. With no reproduction, the run stops `blocked` instead of guessing.
+- A timeout is not a failed attempt. It never counts as a round.
+
+Other loops have their own caps:
+
+| Loop | Cap |
+|---|---|
+| Fix rounds, build or tests | 3 |
+| PR comment rounds | 5 |
+| Rebuilds of a DEV environment | 5 |
+| Continuations of an agent cut at its turn budget, per task | 2, and only while it makes progress |
+
+## Scope and limits
+
+- **Phase 3 never merges.** It ends at PR links.
+- **Two human gates, both in phase 1.** The light lane has one. The deploy phase's stops (a freeze, a busy environment, a canary window with nothing observed, a rollback) are operational, not a third gate.
+- **Permissions are probed, never granted.** Launched in plan mode, a run hands you the relaunch line.
+- **Deploy covers the production rollout only.** Verifying in DEV or staging, aborting a rollout and creating a canary stay outside `/pit-crew:deploy`.
+- **A secret scan is required before the push.** Phase 3 needs `gitleaks`. Without it, the step stops before the push and never records a clean scan.
+- **Roles that are off are skipped, not faked.** Gate 1c names the checks you lose. With no `env` role, every criterion is reported as not tested.
+
+## Next
+
+- [Lanes](../lanes/): which checks each task type keeps.
+- [Hooks reference](../../reference/hooks/): every hook and its event.

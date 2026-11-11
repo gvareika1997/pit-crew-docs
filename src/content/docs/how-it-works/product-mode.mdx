@@ -1,0 +1,122 @@
+---
+title: Product mode
+description: A guided run for people who know the business but not the code, in plain language, with big technical decisions sent to IT.
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+You know what your team needs. You do not know which system to change or how. Product mode is the same pipeline, told in plain business words. Pit Crew takes the technical decisions for you and sends the big ones to your IT team.
+
+## Turn it on
+
+Start the run with the flag:
+
+```text
+/pit-crew:plan --audience product
+```
+
+Or make it your default. Add `PIT_CREW_AUDIENCE=product` to the `env` block of `~/.claude/settings.json` and restart Claude Code. The flag wins over the variable. Pit Crew never asks which mode you want.
+
+The mode is fixed for the whole run. A resumed run keeps it. To work in the other mode, start a new run.
+
+## What changes in the conversation
+
+- **Plain words only.** Questions, recaps, progress lines and the final summary use no technical vocabulary. You see no tool, file or table names, no commands and no error text.
+- **A failure is told as what it means for you**, and what to do next.
+- **A pull request is called a "change proposal".**
+- **Always the complete path.** There is no shortcut. If you ask for one, Pit Crew says it keeps going the full way.
+- **No ticket by default.** The work is followed without a ticket, even with a tracker connected. A ticket id you hand over is still used.
+
+## The interview
+
+Pit Crew asks about your business, never about systems. Expect questions like these:
+
+- One real case, with real names and figures, before any rule.
+- The edge cases, and what should happen in each.
+- Who does it, who sees it, and who must not.
+- Who gets which message, and when. How you will measure success.
+- What matters most, deadlines, and rules that cannot bend.
+- Who is told first, and who starts using it first.
+
+A question you leave unanswered stays open. It is listed at the approval step and blocks it until you answer.
+
+You can still offer technical ideas. Pit Crew records them as a hint, not a rule. If the final design goes another way, the reason is written down for the technical team.
+
+## Which decisions go to IT
+
+Pit Crew designs the solution alone. For every open choice it takes the recommended option and records it. It then checks six big decisions:
+
+| Big decision | In plain words |
+|---|---|
+| `auth_mechanism` | How users are identified |
+| `secret_storage` | Where keys and access are kept |
+| `new_database` | A new database |
+| `new_service_stack` | The technology of a new service |
+| `infra_resource` | New infrastructure |
+| `cross_service_async` | Background communication between systems |
+
+A new table, a new endpoint or a scheduled job is not big.
+
+You see a short recap: what changes for you, what Pit Crew decided by itself, and a link to the plan page for the technical team. The plan page is always published in product mode.
+
+## When IT needs to look
+
+If any big decision applies, Pit Crew sends a short, fixed summary to IT before building anything. Then it asks you one question.
+
+<Steps>
+
+1. **Wait for IT (recommended).** Nothing gets built. The run stops and gives you a line to run later.
+2. **When IT answers**, run that line and tell Pit Crew what they said.
+   - Approved: building starts.
+   - Changes requested: Pit Crew adjusts the plan and shows it to you again.
+   - No answer yet: it keeps waiting.
+3. **Continue without waiting.** Building starts now. The final summary and every change proposal say that IT validation is pending, with the link to the message.
+
+</Steps>
+
+## The support channel
+
+Your organisation sets `PIT_CREW_SUPPORT_CHANNEL`. The older name `PIT_CREW_SUPPORT_SLACK_CHANNEL` also works. Pit Crew posts the IT summary there through the session's chat tool and mentions you when it can find you.
+
+If the variable is unset, or the post fails, Pit Crew prints the message for you to send yourself. When it is unset, it also asks you to tell whoever administers Pit Crew.
+
+## When something is missing on your machine
+
+- **Small helper tools** are installed without asking, after one line telling you.
+- **Software Pit Crew cannot install** stops the run. It tells you what the software is for and asks you to contact IT.
+- **An access only IT can issue** also stops the run. Pit Crew prepares a message with the details. It never asks you for a password or key in the chat.
+
+Each stop ends with a line to run once the problem is solved.
+
+## Testing and the result
+
+Pit Crew proves the change on your own machine first. It uses a separate, temporary test environment only when your machine cannot prove it. It never uses the shared test environment. Anything it could not prove is listed plainly, with the reason.
+
+At the end you get a summary like this:
+
+```text
+What changed: ...
+What I tested: ...
+What I could not test: ...
+IT validation: approved | pending | not needed
+The change proposals: one link each
+```
+
+## What you still decide
+
+| Moment | Your decision |
+|---|---|
+| Business recap | Approve what will be built |
+| Plan recap | Approve the plan |
+| Big decision | Wait for IT, or continue |
+| End of the run | Name who approves the change proposal. Pit Crew never chooses. |
+| Publishing | Run `/pit-crew:deploy` yourself, once the proposal is approved |
+
+When you publish, Pit Crew asks if you want to move the release forward yourself or let it do it. If anything looks wrong, it stops and tells you in plain words what to do.
+
+To add a feature or fix a problem later, run product mode again as a new run. A problem is investigated first, the same as any bug.
+
+## Next
+
+- [Your first run](../../getting-started/first-run/)
+- [Evidence and PRs](../evidence-and-prs/): what the technical reviewer sees.
