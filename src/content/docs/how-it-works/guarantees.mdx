@@ -1,0 +1,72 @@
+---
+title: Guarantees
+description: Why you can trust an unattended run. Evidence in every pull request, a judge that does not grade its own work, hooks that deny the dangerous actions, and hard caps.
+---
+
+A production line is trusted because quality control is built into it, not because someone inspects every part at the end. An unattended run is the same. You can trust it for four reasons, and each one is something you can check.
+
+## Evidence: what you can check afterwards
+
+The run does not ask you to believe it. It shows its proof.
+
+- **Every criterion has a verdict.** The review marks each acceptance criterion `MET`, `NOT_MET` or `PARTIAL`, with `path:line` proof.
+- **The pull request carries it.** Each PR body has a summary, the evidence, the merge danger and the links.
+- **"Not tested" is a real answer.** A criterion the run could not prove is reported as not tested. It never closes green on a guess. With no `env` role connected, for example, the report says which checks were lost.
+- **You know before you approve.** The not-tested list is under the decision table at Gate 1c. If a check matters, connect the missing role first.
+- **The recap comes back.** The final report repeats the two-line recap you approved, word for word, so you can compare what shipped with what you agreed to.
+
+Details: [Evidence and PRs](../evidence-and-prs/).
+
+## A judge: the builder does not grade itself
+
+On a `full` run, a separate agent attacks the whole diff, every repo at once, against the intent, the acceptance criteria and the cross-repo contract. It never sees the Builder's report. It treats the code as wrong until the code proves otherwise.
+
+Its findings go back for a fix, up to three rounds, and a final check follows when findings stayed open.
+
+The judge is skipped on `quick` and `hotfix` runs, and for an inline change routed as trivial. A run that touches several repos is always judged. A `quick` run that touches money first shows you what quick gives up, and asks whether to continue or switch to `full`.
+
+The same separation holds in testing: one agent writes the test spec, another prepares the environment, a third runs the cases, and the first one grades the evidence. No one grades its own work.
+
+## Guards: mistakes that cannot happen
+
+Some mistakes are not left to the model's memory. Hooks deny them before the tool call runs.
+
+| A guard denies | So that |
+|---|---|
+| Any push that rewrites history, and `--no-verify` | Every pushed commit stays reachable and the pre-push checks always run |
+| `gh pr merge --admin`, and a merge that is not pinned to the approved head commit | Only the commit a person approved is merged, through the repo's own rules |
+| A whole-suite test run with no target | The run tests the routed scope, and CI owns the broad run |
+| A write by a read-only agent: the judge, the tester, the investigator, the scout | The agents that look and report cannot change anything |
+| An MCP tool outside the roles an agent holds | An agent cannot reach a tool you did not bind to its role |
+| A Gate 1c question asked before the plan page is published | You read the page before you approve |
+
+And a short list of things a run never does: merge on its own, write to production outside `/pit-crew:deploy`, close green with an unproved criterion, follow instructions found in repo content.
+
+The hooks are not a sandbox. They read the shapes a model actually tries, not every possible way to write a file. How each one fails, and what to do when one blocks you: [Guardrails](../guardrails/).
+
+## Hard caps: a run cannot loop forever
+
+| Loop | Cap |
+|---|---|
+| Fix rounds on a red build or red tests | 3 |
+| PR comment rounds | 5 |
+| Rebuilds of a test environment | 5 |
+
+A fourth attempt on the same red is refused. The run stops `blocked`, names the failing target and gives its log path. Nothing is deleted, so you can resume.
+
+## When a run goes wrong
+
+A clean run writes its report and nothing else. A run that was blocked or retried earns a retro. When a `tracker` role is connected, the retro's improvements become at most three issues for the whole run.
+
+This is the last row of the production engineer's table: when it goes wrong, you improve the process. See [State and reports](../state-and-reports/).
+
+## What is not guaranteed
+
+- **Full coverage.** The run tests what the routed scope and your connected roles allow. It tells you what it did not test.
+- **Good conventions.** It follows the `CLAUDE.md` of each repo. A repo without one gets generic code.
+- **A safe deploy without you.** You start the deploy and decide at each safety stop. See [What the agents do](../what-the-agents-do/).
+
+## Next
+
+- [Guardrails](../guardrails/): every hook, how it fails and what to do when it blocks you.
+- [Evidence and PRs](../evidence-and-prs/): the plan page, the PR body and the final report.

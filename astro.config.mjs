@@ -18,7 +18,7 @@ export default defineConfig({
     starlight({
       title: 'Pit Crew',
       description:
-        'A four-phase feature delivery pipeline for Claude Code: from a ticket to a reviewed, verified pull request.',
+        'With Pit Crew a systems engineer works like a production engineer: you design and approve at two gates, the agents build, and every pull request comes back with evidence.',
       logo: { src: './src/assets/pit-crew-sticker.svg', alt: '' },
       favicon: '/favicon.svg',
       customCss: ['./src/styles/theme.css'],
@@ -30,42 +30,45 @@ export default defineConfig({
       sidebar: [
         { label: 'Introduction', link: '/' },
         {
-          label: 'Getting started',
-          items: [
-            { label: 'Install', slug: 'getting-started/install' },
-            { label: 'Setup and health check', slug: 'getting-started/setup' },
-            { label: 'Your first run', slug: 'getting-started/first-run' },
-            { label: 'A worked example', slug: 'getting-started/worked-example' },
-            { label: 'Connect your tools', slug: 'getting-started/connect-your-tools' },
-            { label: 'Videos', slug: 'getting-started/videos' },
-          ],
+          label: 'Why',
+          items: [{ label: 'Why it changes the job', slug: 'how-it-works/why' }],
         },
         {
-          label: 'How it works',
+          label: 'How you work',
           items: [
-            { label: 'Why Pit Crew', slug: 'how-it-works/why' },
-            { label: 'The flow', slug: 'how-it-works/the-flow' },
+            { label: 'The two gates', slug: 'how-it-works/your-two-gates' },
+            { label: 'Plan: the phase you drive', slug: 'how-it-works/plan' },
             { label: 'Lanes', slug: 'how-it-works/lanes' },
-            {
-              label: 'The four phases',
-              items: [
-                { label: '1 · Plan', slug: 'how-it-works/plan' },
-                { label: '2 · Dev', slug: 'how-it-works/dev' },
-                { label: '3 · Test', slug: 'how-it-works/test' },
-                { label: '4 · Deploy', slug: 'how-it-works/deploy' },
-              ],
-            },
-            { label: 'Evidence and PRs', slug: 'how-it-works/evidence-and-prs' },
             { label: 'Bug triage', slug: 'how-it-works/triage' },
             { label: 'Product mode', slug: 'how-it-works/product-mode' },
             { label: 'Brainstorm', slug: 'how-it-works/brainstorm' },
+            { label: 'Your first run', slug: 'getting-started/first-run' },
+            { label: 'A worked example', slug: 'getting-started/worked-example' },
+          ],
+        },
+        {
+          label: 'What the agents do',
+          items: [
+            { label: 'From Gate 1c to green PRs', slug: 'how-it-works/what-the-agents-do' },
+            { label: 'The flow', slug: 'how-it-works/the-flow' },
+            { label: 'Dev', slug: 'how-it-works/dev' },
+            { label: 'Test', slug: 'how-it-works/test' },
+            { label: 'Deploy (you start it)', slug: 'how-it-works/deploy' },
+          ],
+        },
+        {
+          label: 'Guarantees',
+          items: [
+            { label: 'Why you can trust a run', slug: 'how-it-works/guarantees' },
+            { label: 'Evidence and PRs', slug: 'how-it-works/evidence-and-prs' },
             { label: 'Guardrails', slug: 'how-it-works/guardrails' },
             { label: 'State and reports', slug: 'how-it-works/state-and-reports' },
           ],
         },
         {
-          label: 'Roles and adapters',
+          label: 'Portable core and connectors',
           items: [
+            { label: 'Connect your tools', slug: 'getting-started/connect-your-tools' },
             { label: 'Roles and bindings', slug: 'roles' },
             {
               label: 'The nine roles',
@@ -84,18 +87,22 @@ export default defineConfig({
             },
             { label: 'Write an adapter', slug: 'roles/write-an-adapter' },
             { label: 'Telemetry', slug: 'roles/telemetry' },
-          ],
-        },
-        {
-          label: 'Packs',
-          items: [
             { label: 'What a pack is', slug: 'packs' },
             { label: 'Write a pack', slug: 'packs/write-a-pack' },
             { label: 'Open core design', slug: 'packs/open-core-design' },
           ],
         },
         {
+          label: 'Install',
+          items: [
+            { label: 'Install', slug: 'getting-started/install' },
+            { label: 'Setup and health check', slug: 'getting-started/setup' },
+            { label: 'Videos', slug: 'getting-started/videos' },
+          ],
+        },
+        {
           label: 'Reference',
+          collapsed: true,
           items: [
             { label: 'Commands', slug: 'reference/commands' },
             { label: 'Skills', slug: 'reference/skills' },
