@@ -21,8 +21,8 @@ A bug report tells you what someone saw. It rarely tells you why. Triage reads t
 |---|---|
 | A triage already exists for this run | Reused, never run twice |
 | The ticket type is `Bug` (or `Error`) | Bug |
+| A raw report pasted from someone else, such as a chat thread | Bug, even when it reads like a request or carries another ticket type |
 | Any other ticket type | Feature, no triage |
-| A raw report pasted from someone else, such as a chat thread | Bug, even when it reads like a request |
 | No ticket type | Wrong current behaviour is a bug; new behaviour is a feature |
 | Still unclear | It asks you once, under the header "Bug or not" |
 
@@ -90,7 +90,7 @@ A standalone triage may fix a knowledge-base page that disagrees with the code, 
 
 <Steps>
 
-1. A standalone triage ends with the verdict and a line that continues into a fix:
+1. A standalone triage ends with the verdict and, unless the verdict is `not_a_bug`, a line that continues into a fix:
 
    ```text
    /pit-crew:plan ~/.claude/pit-crew/<slug>/state.json

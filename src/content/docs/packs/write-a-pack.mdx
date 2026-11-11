@@ -13,7 +13,7 @@ Your team wants the same tracker, environment and logs in every run. This page b
 |---|---|---|
 | A fork of the Pit Crew repository, pack in `plugins/pit-crew-<company>/` | The default | Core and pack share one marketplace, so the dependency resolves with no extra setting. You take core updates with a plain `git merge` |
 | A pack contributed to the upstream repository | The maintainer gives your organisation write access | No fork to keep up to date. Everyone with access reads every pack, so your hosts and team ids are public to them |
-| A separate repository of your own | Your values must stay private and you do not want a fork | The core lives in another marketplace. Your marketplace must list it in `allowCrossMarketplaceDependenciesOn` |
+| A separate repository of your own | Your values must stay private and you do not want a fork | The core lives in another marketplace. Name that marketplace in the `pit-crew` dependency entry (`"marketplace"`) and list it in your marketplace's `allowCrossMarketplaceDependenciesOn` |
 
 One rule keeps a fork painless: put everything of your company in `plugins/pit-crew-<company>/` and in your own marketplace entry. Do not edit `plugins/pit-crew/`. Send core changes upstream as a pull request instead. Then an upstream merge touches only files you never edit.
 
@@ -100,7 +100,7 @@ A role entry takes `enabled`, `adapter`, `guide`, `server`, `tools` and `setting
 
 ## Bind your tools
 
-Fill `roles` for each tool you have, and leave out the rest. A role you leave out stays off: its step is skipped and recorded, and the run still works.
+Fill `roles` for each tool you have, and leave out the rest. A role you leave out stays off, except `stack`, which stays on as `generic`. The step of an off role is skipped and recorded, and the run still works.
 
 | Role | What it answers | Start from |
 |---|---|---|
@@ -129,7 +129,7 @@ Servers the pack bundles go in `plugins/pit-crew-<company>/.mcp.json`. Their too
 mcp__plugin_pit-crew-<company>_<server>__<tool>
 ```
 
-Use that id in `tools`. Each person still provides the credentials. List the variables in your pack's README, because `/pit-crew:setup` points people there.
+Use that id in `tools`. Each person still provides the credentials. List each variable and how to get it in a `SETUP.md` at the pack root: `/pit-crew:setup` reads that file as the pack's setup notes. With no `SETUP.md`, setup only names the variable.
 
 :::caution[A personal copy shadows the pack's server]
 If a person also has a user-scope server with the same name, Claude Code loads their copy and drops the pack's. Every agent then loses those tools. `/pit-crew:setup` flags it and offers to remove the copy.

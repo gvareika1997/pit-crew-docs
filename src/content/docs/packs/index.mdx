@@ -20,7 +20,7 @@ You have three options. Pick the smallest one that does the job.
 A repo can also carry its own file, `<repo>/.pit-crew/config.json`. It sets build and test commands for that repo and the roles the repo cannot ship without. It never names a tool id, a server or an `env` adapter, because the file arrives with the branch.
 
 :::tip[Start without one]
-You do not need a pack to start. Connect tools one role at a time in your config file. Write a pack when a second person needs the same setup.
+You do not need a pack to start. Connect tools one role at a time in your config file. Write a pack when your organisation wants every person on the same tools.
 :::
 
 ## What a pack carries
@@ -52,7 +52,7 @@ The pack's `dependencies` entry makes Claude Code install the core too. The entr
 "dependencies": [{ "name": "pit-crew", "version": ">=6.0.0 <7.0.0" }]
 ```
 
-The version is a semver range resolved against the core's git tags. When the core and the pack live in different marketplaces, the pack's marketplace must list the core's marketplace in `allowCrossMarketplaceDependenciesOn`. Without it the core is not installed.
+The version is a semver range resolved against the core's git tags. When the core and the pack live in different marketplaces, name the core's marketplace in the dependency entry (`"marketplace": "<core marketplace name>"`) and list that marketplace in `allowCrossMarketplaceDependenciesOn` of the pack's marketplace. Without both, the core is not installed. A person who already has the core installed and enabled at the same scope is not affected.
 
 After installing, each person restarts Claude Code and runs `/pit-crew:setup`. Setup shows which roles are on and walks the credentials of the pack's servers. See [Setup](../getting-started/setup/).
 

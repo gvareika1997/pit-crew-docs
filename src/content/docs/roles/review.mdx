@@ -28,7 +28,7 @@ Declare each `name` once. A duplicate is a configuration error to report.
 
 **Which bots a round waits for.** A repo can say it in its `CLAUDE.md` on the default branch, under a `## pit-crew: review bots` heading, with a line such as `bots: alpha, beta` or `bots: none`. Without that line, the run uses the bots seen on the repo's last merged PRs and on the head.
 
-**The pre-push review.** `prepush_skill` names a skill, as `<plugin>:<skill>`, that reviews the diff before the push. If it is absent or not installed, that step is recorded as unavailable. The secret scan and the standards pass still run.
+**The pre-push review.** `prepush_skill` names a skill, as `<plugin>:<skill>`, that reviews the diff before the push. It runs only when the run's pre-push mode is `llm`. If it is absent or not installed, that step is recorded as unavailable. The secret scan and the standards pass still run.
 
 ## Minimal config
 

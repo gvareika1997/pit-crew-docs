@@ -13,7 +13,7 @@ An agent reads the file once, before its first call to the role. So write steps 
 
 <Steps>
 
-1. Copy the template [`adapters/TEMPLATE.md`](https://github.com/gvareika1997/pit-crew/blob/main/plugins/pit-crew/adapters/TEMPLATE.md) to `adapters/<role>/<name>.md` beside your config file. For a user config that is `~/.claude/pit-crew/adapters/<role>/<name>.md`. For a pack, put it inside the pack.
+1. Copy the template `plugins/pit-crew/adapters/TEMPLATE.md`, from the plugin repository, to `adapters/<role>/<name>.md` beside your config file. For a user config that is `~/.claude/pit-crew/adapters/<role>/<name>.md`. For a pack, put it inside the pack.
 
 2. Fill one section per verb your tool supports. Leave out the verbs it lacks: an unbound verb is unavailable, and the step that needs it is skipped and recorded.
 
@@ -43,7 +43,7 @@ The guide never names a tool id from memory. The agent reads the id from the `ro
 
 ## A tool with no MCP server
 
-Some adapters run shell commands instead of MCP tools, like the shipped `github-issues` or `local`. In that case `tools` stays empty. For a pack's own adapter, declare the shell verbs in `pack.json`, so required verbs count as present:
+Some adapters run shell commands instead of MCP tools, like the shipped `github-issues` or `local`. In that case `tools` stays empty. For a pack's own adapter, declare the shell verbs in `pack.json`, so required verbs count as present. For example, for an `env` adapter named `my-env`, a placeholder name:
 
 ```json
 { "adapters": { "env": { "my-env": { "verbs": ["up", "status", "request", "down"] } } } }

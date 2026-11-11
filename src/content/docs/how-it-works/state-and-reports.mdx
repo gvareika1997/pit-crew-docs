@@ -18,7 +18,7 @@ The folder sits outside every repo, so no branch, stash or checkout can touch it
 | `patches/` | Pending changes to the state, and `applied/` once merged |
 | `results/` | The result files of the testing agents |
 | `tmp/` | Scratch files: diffs, logs, run facts, wait scripts |
-| `browser/` | DEV session files. They are credentials, so they are deleted at the end of every run |
+| `browser/` | The pinned `playwright-core` and the DEV session files. The session files are credentials, so they are deleted at the end of every run |
 | `retro-ledger.json` | Which retros ran and what they published |
 
 Reports live in a sibling folder, `~/.claude/pit-crew/_reports/`, so cleanup never takes them.
@@ -35,7 +35,7 @@ Evidence stays reusable while its files are unchanged at the recorded commit. A 
 |---|---|---|
 | `/pit-crew:plan` | Says where the run stands and continues from the first unfinished step | Starts a new run |
 | `/pit-crew:dev` | Continues phase 2 | Uses the most recently updated run and says which |
-| `/pit-crew:test` | Resumes phase 3, or re-runs it on an existing state | Uses the most recently updated run and says which |
+| `/pit-crew:test` | Resumes phase 3. It stops when the state is not at phase `test` | Uses the most recently updated run and says which |
 | `/pit-crew:deploy` | Merges and rolls out that run's approved PRs | See [Deploy](../deploy/) |
 
 ```text
@@ -65,7 +65,7 @@ It is built from the state's counters and timestamps, not from a new investigati
 - **Pre-existing reds**: tests that also fail on the base branch.
 - **One line per proportionality decision**: why there was or was not a plan page, the money acknowledgement, the pre-push review mode and the verification route.
 
-The same evidence goes into each PR body. A hotfix has no cases and no evidence section.
+The same evidence goes into each PR body. A hotfix has no cases and no cases section. Its PR body still carries the startup line.
 
 ## When a retro is written
 
@@ -90,9 +90,9 @@ When a `tracker` role is connected, the retro's improvements become at most thre
 | When | What is removed | What stays |
 |---|---|---|
 | End of phase 3, any outcome | DEV session files under `browser/` | Everything else |
-| End of phase 3 | Each worktree that holds no uncommitted or unpushed work | A worktree with work in it. The run prints where it lives |
+| End of a `completed` phase 3 | Each worktree that holds no uncommitted or unpushed work | A worktree with work in it. The run prints where it lives |
 | `/pit-crew:deploy`, every rollout completed | The whole run folder, after printing the report | The `_reports/` folder |
-| A `blocked` or `needs_input` stop, in any phase | Nothing | The state is the only way to resume |
+| A `blocked` or `needs_input` stop, in any phase | Nothing, except the DEV session files under `browser/` | The state is the only way to resume |
 
 With no `deploy` role connected, a rollout counts as completed at its merge, recorded as not observed. If a worktree is still live under the run folder, deploy skips the delete and says where both live.
 

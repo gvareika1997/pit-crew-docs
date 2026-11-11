@@ -26,18 +26,18 @@ Two situations always stop and ask, because a re-run cannot undo them: anything 
 |---|---|---|
 | `git-push-guard.sh` | Any push that rewrites history: `--force`, `-f`, `--force-with-lease`, a `+` refspec, a force set through config or hidden in a shell wrapper. Also `--no-verify` and its prefixes. | A rewritten history and a skipped pre-push hook are the two mistakes a later phase cannot undo. A merge commit keeps every pushed sha reachable and the review threads anchored. |
 | `gh-merge-guard.sh` | `gh pr merge --admin`, a merge without `--match-head-commit`, and the same merge through the REST endpoint or GraphQL, including auto-merge. | Deploy may merge only the head sha a human approved, through the repo's own rules. |
-| `test-scope-guard.sh` | A bare `playwright test` with no spec, `--grep` or `--project`, and a root `mvn verify` or `test` with no module or class. Only for the `java-maven` and `ui` stacks. | A whole-suite run costs about an hour and proves nothing the routed scope did not. On other stacks the run keeps the rule without a hook. |
+| `test-scope-guard.sh` | A bare `playwright test` with no spec, `--grep` or `--project`, and a root `mvn verify` or `test` with no module or class. It checks any command that calls Maven or Playwright, whatever the repo's stack. | A whole-suite run costs about an hour and proves nothing the routed scope did not. On other stacks the run keeps the rule without a hook. |
 | `mvn-pipe-guard.sh` | A Maven command whose output is piped. Redirecting to a file is allowed. | A pipe reports the last command's status, so a `BUILD FAILURE` slips through. |
 | `readonly-role-guard.cjs` | Writes by the read-only agents: the case designer, the tester, the judges, the standards reviewer, the investigator and the scout. They get no git or GitHub mutation, no remote write and no file write outside their own run files. The case designer gets no network client. | These roles look and report. Remote writes the tester needs go through the `env` role's tools. |
-| `role-tool-guard.cjs` | An MCP call by a pipeline agent to a tool not bound to a role it holds. Also any agent write to the files that define those grants. | Pipeline agents have no tool allowlist of their own. This hook is their MCP grant, and an agent must not rebind a verb to a write tool. |
-| `grant-digest.cjs` | Nothing by itself. It records a keyed digest of the grant files at session start. If one changes mid-session, the role guard denies the next agent MCP call. | It catches a change the role guard's Bash checks missed. |
+| `role-tool-guard.cjs` | An MCP call by a pipeline agent to a tool not bound to a role it holds. Also any agent write to the files that define those grants. And any Bash command of `df-dev-tester` or `df-dev-configurator` outside the allowlist in `bash-allowlist.cjs`: `curl`, git and gh reads, text and file tools, the stack's build and test commands, the pit-crew scripts, and the run's own script files under `tmp/` or `browser/`. Inline code and a program on stdin are denied. | Pipeline agents have no tool allowlist of their own. This hook is their MCP grant, and an agent must not rebind a verb to a write tool. |
+| `grant-digest.cjs` | Nothing by itself. It records a keyed digest of the grant files at session start, then takes it again and seals it at the main session's first agent call. If one changes mid-session, the role guard denies the next agent MCP call. | It catches a change the role guard's Bash checks missed. |
 | `plan-page-gate-guard.cjs` | A Gate 1c question asked before the plan page is published, with an outdated page, or without its link. An unavailable page must be explained in the question. | You read the page before you approve. The merge step refuses the approval as a backstop. |
 | `subagent-result-guard.cjs` | An agent that ends its turn without its closing result, once. The retry is allowed. | A turn that ends while "waiting" leaves the run with nothing to register. |
 | `telemetry-hook.cjs` | Nothing. It always exits 0. | It records which run the session is on, and queues events only when telemetry is on. |
 
 ### How the hooks fail
 
-The shell guards and the plan-page guard **fail open**: with no `jq`, an unparseable command or any doubt, they let the call through. A guard that blocks on ignorance would break normal sessions. The read-only and role guards fail open until they know the caller is a pipeline agent. After that they **fail closed**: an error while judging a matched agent denies the call.
+The shell guards and the plan-page guard **fail open**: with no `jq`, an unparseable command or any doubt, they let the call through. A guard that blocks on ignorance would break normal sessions. One exception: the merge guard denies a GraphQL call whose query comes from a file, stdin or a shell expansion it cannot read. The read-only and role guards fail open until they know the caller is a pipeline agent. The role guard also denies an MCP call from a subagent it cannot name. After that they **fail closed**: an error while judging a matched agent denies the call.
 
 The hooks are not a sandbox. They read the shapes a model actually tries, not every possible way to write a file.
 
@@ -69,9 +69,9 @@ Other loops have their own caps:
 - **Phase 3 never merges.** It ends at PR links.
 - **Two human gates, both in phase 1.** The light lane has one. The deploy phase's stops (a freeze, a busy environment, a canary window with nothing observed, a rollback) are operational, not a third gate.
 - **Permissions are probed, never granted.** Launched in plan mode, a run hands you the relaunch line.
-- **Deploy covers the production rollout only.** Verifying in DEV or staging, aborting a rollout and creating a canary stay outside `/pit-crew:deploy`.
+- **Deploy covers the production rollout only.** Verifying in DEV or staging and creating a canary stay outside `/pit-crew:deploy`. It calls `abort` on a rollout only when you ask.
 - **A secret scan is required before the push.** Phase 3 needs `gitleaks`. Without it, the step stops before the push and never records a clean scan.
-- **Roles that are off are skipped, not faked.** Gate 1c names the checks you lose. With no `env` role, every criterion is reported as not tested.
+- **Roles that are off are skipped, not faked.** Gate 1c names the checks you lose. With no `env` role, verification uses the local route. When that is not possible either, every criterion is reported as not tested.
 
 ## Next
 

@@ -50,7 +50,7 @@ Each event can carry:
 - `audience`, on a product run only
 - the harness version, the phase and the step
 - **your git email and GitHub login**
-- PR numbers
+- PR numbers, and the start time of the run on each PR event
 - the subagent type and model family
 - a tool name and a failure category
 - the id of a gate rule that rejected
@@ -61,7 +61,7 @@ Each event can carry:
 
 Code, diffs, prompts, ticket text, file contents, error messages and secrets.
 
-A failure is sent only as a category taken from the error's shape: `timeout`, `denied`, `mcp_error`, `exit_code` or `other`. The message itself is dropped. Any name outside the allowlists is dropped before it is queued.
+A failure is sent only as a category taken from the error's shape: `connection`, `sql_error`, `timeout`, `denied`, `mcp_error`, `exit_code` or `other`. The message itself is dropped. Any name outside the allowlists is dropped before it is queued.
 
 ## The one-time notice
 
@@ -69,14 +69,14 @@ The first run with telemetry on prints a notice with the classes of data above. 
 
 ## How sending works
 
-Events queue on your machine, under `~/.claude/pit-crew/<slug>/telemetry/queue.jsonl`. A detached process sends them in batches, so sending never blocks or breaks a run. A failed batch stays queued for the next attempt. The queue is capped at 2000 lines.
+Events queue on your machine, under `~/.claude/pit-crew/<slug>/telemetry/queue.jsonl`. A detached process sends them in batches, so sending never blocks or breaks a run. A batch that fails on a server error, a timeout or a refused connection stays queued for the next attempt. A batch the collector rejects with 400 or 413 is resent one event at a time, and only the events it rejects are dropped. The queue is capped at 2000 lines.
 
 ## Force it off
 
 Set `PIT_CREW_TELEMETRY=off` in the `env` block of `~/.claude/settings.json`. The values `0`, `false` and `no` work too. This wins over any role, pack or URL.
 
 :::tip[Check before you trust a pack]
-A pack can turn the `events` role on for you. Run `node scripts/roles.cjs --role events` to see whether it is on, and which layer set it in `source`.
+A pack can turn the `events` role on for you. Run `node scripts/roles.cjs --role events` to see whether the role is on, and which layer set it in `source`. It does not show `PIT_CREW_TELEMETRY_URL`, which turns telemetry on by itself.
 :::
 
 ## Next

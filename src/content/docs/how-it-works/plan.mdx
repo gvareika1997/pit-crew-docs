@@ -25,9 +25,9 @@ Give it a ticket id, a precise prompt or a raw report. A good prompt says what, 
 
 <Steps>
 
-1. **Bootstrap.** Pit Crew creates the run's state file at `~/.claude/pit-crew/<slug>/state.json`, outside every repo. The slug is the ticket id in lower case, or a short kebab name. It detects your language and uses it for every message, ticket and PR. Then it asks the task type: `full`, `quick` or `hotfix`. See [Lanes](../lanes/).
+1. **Bootstrap.** Pit Crew creates the run's state file at `~/.claude/pit-crew/<slug>/state.json`, outside every repo. The slug is the ticket id in lower case, or a short kebab name. It detects your language and uses it for every message, ticket and PR. The task type (`full`, `quick` or `hotfix`) is settled before the state file is created, and recorded in it. See [Lanes](../lanes/).
 
-2. **Tier-1 pre-flight.** It checks `git`, `node`, `jq`, `gh auth status`, the agents your session loaded and each connected tool. You get one consolidated report: what is missing, how serious it is for this run, and what you lose. It also prints one line naming every role that is off.
+2. **Tier-1 pre-flight.** It checks `git`, `node`, `jq`, `gh auth status`, the agents your session loaded and each connected tool. You get one consolidated report: what is missing, how serious it is for this run, and what you lose. It also prints one line naming every role that is off or partial, and what the run loses.
 
 3. **Triage, when the request is a bug.** A bug ticket, or a raw report from someone else, gets a read-only investigation first. A `quick` or `hotfix` run gets the quick depth, a `full` run the full one. See [Triage](../triage/).
 
@@ -80,7 +80,7 @@ Every question puts the recommended option first and ends with a fixed "I don't 
 | `df-scout` | Locates code ownership, call sites, schemas and endpoints with `file:line` evidence |
 | `df-architect` | Designs ownership, data changes, communication, contracts, risks and Builder slices |
 
-All four are read-only. None writes code. See [Agents](../../reference/agents/).
+None writes code. `df-investigator` and `df-scout` are read-only; `df-business-analyst` and `df-architect` write only their own patch file. See [Agents](../../reference/agents/).
 
 ## What each role adds
 
@@ -88,7 +88,7 @@ All four are read-only. None writes code. See [Agents](../../reference/agents/).
 |---|---|---|
 | `tracker` | Reads or creates the ticket | The run goes without a ticket |
 | `docs` | Company-knowledge lookup before the business draft, and fixes to stale pages | The lookup is recorded `unavailable`; no page fixes |
-| `data` | Reads the real schema before designing | The design relies on code alone |
+| `data` | Reads the real schema before designing | No row corroboration and no data fixture; a criterion that needs one is not tested |
 | `env`, `logs` | Tier 2 probes them against this design | Their routes are recorded as lost |
 | `stack` | Tier 2 checks the toolchain each repo declares | Always on |
 

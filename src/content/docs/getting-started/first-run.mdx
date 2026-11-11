@@ -48,11 +48,11 @@ Say what, where and for whom. "Integrate provider X in service Y to process payi
 
 5. **The run implements, tests and reviews.**
 
-   It works in a worktree, runs the affected tests, and an adversarial judge attacks the whole diff before anything is pushed.
+   It works in a worktree and runs the affected tests. On a `full` run an adversarial judge attacks the whole diff before anything is pushed.
 
 6. **It opens the pull requests and verifies them.**
 
-   It runs the pre-push review, opens the PRs, verifies the acceptance criteria in DEV when the `env` role is connected, and resolves review comments.
+   It runs the pre-push review, opens the PRs, verifies the acceptance criteria in a test environment, or with a local run of the service when the `env` role is off, and resolves review comments.
 
 7. **You get the PR links and a report.**
 
@@ -152,7 +152,7 @@ What a run can show you:
 What it cannot prove:
 
 - **Phase 3 does not run the whole suite.** It runs the scope the router sized for each repo: touched code, the module, or the module plus end-to-end tests. CI owns the broad validation.
-- **A criterion that could not be proved is reported as not tested.** The run does not close green on it. With no `env` role, every criterion is reported as not tested.
+- **A criterion that could not be proved is reported as not tested.** The run does not close green on it. With no `env` role, verification falls back to a local run of the service. A criterion it cannot prove that way, for example because the repo declares no way to run locally, is reported as not tested.
 - **A hotfix verifies nothing in DEV.** Every case is not tested, with the reason "validate in prod", and the run closes incomplete by design.
 - **Fix loops cap at three.** A fourth attempt on the same red build or test is refused, and the run reports `blocked` with the log path.
 - **The run is only as good as the `CLAUDE.md` it reads.** A repo with no conventions file gets generic code.

@@ -35,6 +35,7 @@ export default defineConfig({
             { label: 'Install', slug: 'getting-started/install' },
             { label: 'Setup and health check', slug: 'getting-started/setup' },
             { label: 'Your first run', slug: 'getting-started/first-run' },
+            { label: 'A worked example', slug: 'getting-started/worked-example' },
             { label: 'Connect your tools', slug: 'getting-started/connect-your-tools' },
             { label: 'Videos', slug: 'getting-started/videos' },
           ],

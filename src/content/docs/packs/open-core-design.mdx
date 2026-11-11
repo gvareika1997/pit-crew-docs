@@ -116,6 +116,8 @@ Any other pipeline agent holds no role. The main session is not restricted by th
 
 The same hook denies a pipeline agent any write to the files grants come from: the user config, the pack registry, a `pack.json` and a repo `.pit-crew/config.json`. An agent cannot widen its own grants.
 
+On `Bash`, the same hook also limits `df-dev-tester` and `df-dev-configurator` to an allowlisted command set (`hooks/bash-allowlist.cjs`). A command outside it is denied.
+
 To see what an agent may call, run `node scripts/roles.cjs --agent df-investigator` from the plugin folder. The output ends with a `granted` list of tool ids.
 
 ## Rules for adapters and packs

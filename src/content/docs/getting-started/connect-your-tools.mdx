@@ -15,7 +15,7 @@ This page is optional. With nothing connected the pipeline still runs: every rol
 |---|---|---|
 | `tracker` | the run reads an existing ticket and creates one after the business gate | the run has no ticket |
 | `docs` | a company-knowledge lookup before the business draft | terms come from the repo alone |
-| `env` | DEV verification in a test environment | each criterion is reported as not tested |
+| `env` | DEV verification in a test environment | verification is local, or each criterion is reported as not tested |
 | `logs` | log evidence for DEV cases and for triage | evidence is the service's own output |
 | `data` | the real schema before designing, and test-data fixtures | a criterion that needs a row is not tested |
 | `review` | the run waits for the review bots of a PR and resolves their comments | human comments are still resolved |
@@ -128,4 +128,4 @@ A **pack** is a second plugin that carries one organisation's bindings, MCP serv
 
 ## Full reference
 
-The complete binding format, the verbs of each role and the steps to write a new adapter are in [`plugins/pit-crew/adapters/README.md`](https://github.com/gvareika1997/pit-crew/blob/main/plugins/pit-crew/adapters/README.md) in the repository.
+The complete binding format, the verbs of each role and the steps to write a new adapter are in `plugins/pit-crew/adapters/README.md` in the plugin repository. That repository is private: see [Install](../install/#get-access).

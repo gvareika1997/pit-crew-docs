@@ -14,8 +14,10 @@ Every variable here is optional. Put them in the `env` block of `~/.claude/setti
 | `PIT_CREW_CONFIG` | role resolution | Another path for the user config, instead of `~/.claude/pit-crew/config.json` |
 | `PIT_CREW_PACKS` | role resolution | A path list of pack folders. While it is set it replaces the config's `packs` list and the pack registry. For tests, CI and trying a pack |
 | `PIT_CREW_TELEMETRY` | usage events | `off`, `0`, `false` or `no` turns telemetry off, whatever the role or the URL says |
-| `PIT_CREW_TELEMETRY_URL` | usage events | A collector endpoint. Setting it turns telemetry on. See [Telemetry](../../roles/telemetry/) |
+| `PIT_CREW_TELEMETRY_URL` | usage events | A collector endpoint. A valid one (`https`, or `http://localhost` or `127.0.0.1` for tests) turns telemetry on. Any other value is ignored. See [Telemetry](../../roles/telemetry/) |
 | `PIT_CREW_TELEMETRY_TOKEN` | usage events | The default variable whose value is sent as the bearer token. A role can name another one, and it must start with `PIT_CREW_` |
+| `PIT_CREW_RETRO_PUBLISH` | retro publishing | `0` turns off publishing retro improvements to the tracker. See [State and reports](../../how-it-works/state-and-reports/) |
+| `PIT_CREW_RETRO_PROJECT` | retro publishing | The tracker project retro issues go to, instead of the `tracker` role's `retro_project` setting |
 
 :::caution[Credentials]
 The `env` block is plain text, and every subprocess of the session inherits it. Keep `settings.json` out of synced or committed dotfiles. Never paste a value into the conversation.

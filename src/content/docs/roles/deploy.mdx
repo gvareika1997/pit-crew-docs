@@ -39,6 +39,8 @@ Merging to the deploy branch is itself a deploy. Verification happens before the
 
 ## Minimal config
 
+The `workflow` and `freeze_check` values below are placeholders. Use your own workflow file and command.
+
 ```json
 {
   "roles": {
@@ -58,7 +60,7 @@ Without `environment`, the adapter uses `production`. Without `workflow`, it rea
 
 ## When it is off
 
-`/pit-crew:deploy` merges one PR at a time and stops. The rollout is reported as not observed.
+`/pit-crew:deploy` still merges, one PR at a time, and does nothing else. Before the first merge it asks you once whether to merge with nothing checking a freeze or watching the rollout. A no stops with nothing merged. The report says, per repo: merged, required checks green, rollout not observed.
 
 ## Next
 

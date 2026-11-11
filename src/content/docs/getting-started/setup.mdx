@@ -23,8 +23,8 @@ It never touches your `CLAUDE.md`, your permission rules or your hooks. It never
 4. **One decision.** You accept the list, with exclusions, or decide item by item. Nothing is removed before you confirm.
 5. **Apply.** It removes only what you confirmed, and saves a copy of each item first.
 6. **Credentials.** It names each missing variable and where it goes. You type the value yourself.
-7. **Tracker and knowledge base.** It explains how to connect them and confirms each with one read-only call.
-8. **Companion plugins.** It offers three optional plugins, one question each.
+7. **Tracker and knowledge base.** For each of these roles that is on, it explains where to connect the tool and confirms it with one read-only call. A role that is off gets one line on what the run does without it.
+8. **Support tools.** It offers RTK (recommended), then the caveman and context-mode plugins (optional), one question each.
 9. **Summary.** It ends with what was done, what is still pending for you, and where the backup is.
 
 </Steps>
@@ -36,8 +36,8 @@ Each thing Pit Crew needs gets one status:
 | Status | Meaning | What to do |
 |---|---|---|
 | present | Installed and working | Nothing |
-| missing | Not installed | Follow the fix line it prints |
-| needs action | Installed, but something is missing, such as a credential | Follow the fix line it prints |
+| missing | The optional pre-push review plugin the `review` role names is not installed | Follow the fix line it prints |
+| needs action | A required item failed its check, for example a CLI that is absent or not signed in, or a server whose credential is not set | Follow the fix line it prints |
 | `off` (a role) | No tool is connected to that role | Nothing. It is shown as information, not as a fault. The run skips that step and records it |
 | unknown | The status check itself could not run | Read the reason it gives. Every unknown comes from that failure, not from a missing tool |
 
@@ -52,7 +52,7 @@ Two more lines check that updates can arrive:
 
 `unverified` and `not_applicable` on either line are not errors. Setup never runs these fixes for you: it shows them, and you run them.
 
-For a missing CLI whose fix needs no credential, it offers to run the fix on your yes. A fix that needs a login or a credential stays your step.
+For a CLI that needs action and whose fix needs no credential, it offers to run the fix on your yes. A fix that needs a login or a credential stays your step.
 
 ## What it proposes to remove
 
@@ -66,7 +66,7 @@ It keeps the core, your installed packs, its optional plugins, and the plugins a
 If your config format is not recognised, it says so and removes nothing. The rest of the check still runs.
 
 :::caution[A shadowing server]
-When your own copy of a server has the same name as one a pack bundles, Claude Code loads your copy and drops the pack's. Every Pit Crew agent then loses those tools. Before setup removes your copy, move its token into the variable it names. The removal is refused until that variable is loaded.
+When your own user-scope server has the same URL or command line as one a pack bundles, Claude Code loads your copy and drops the pack's. Every Pit Crew agent then loses those tools. Before setup removes your copy, move its token into the variable it names. The removal is refused until that variable is loaded.
 :::
 
 ## Credentials
@@ -81,7 +81,7 @@ Afterwards it checks that the variable is set, and whether you still need to res
 
 ## Companion plugins
 
-| Plugin | Offer |
+| Tool | Offer |
 |---|---|
 | RTK | Recommended |
 | caveman | Optional |

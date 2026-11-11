@@ -24,7 +24,7 @@ After you approve the architecture, the run checks whether the session can write
 
 ### Evidence comes back with the PR
 
-The run implements in a git worktree, never in your clone. It runs the affected tests, and an internal judge attacks the diff against the ticket before the push. Then it scans for secrets, opens the PRs and verifies each acceptance criterion in a DEV environment. It also answers review comments from bots and humans. A criterion it could not prove is reported as not tested. It never closes green on a guess.
+The run implements in a git worktree, never in your clone. It runs the affected tests, and on a `full` run an internal judge attacks the diff against the ticket before the push. Then it scans for secrets, opens the PRs and verifies each acceptance criterion in a DEV environment. It also answers review comments from bots and humans. A criterion it could not prove is reported as not tested. It never closes green on a guess.
 
 ### It works with what you have
 

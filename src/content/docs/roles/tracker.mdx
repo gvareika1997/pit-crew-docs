@@ -3,7 +3,7 @@ title: tracker
 description: The role that reads an existing ticket and creates one after the business gate.
 ---
 
-The `tracker` role connects a run to your issue tracker. With it on, the run reads an existing ticket you hand over. After you approve the business gate, it creates the ticket. The ticket id then shapes the branch name and the PR title.
+The `tracker` role connects a run to your issue tracker. With it on, the run reads an existing ticket you hand over. When you hand over no ticket id, it creates the ticket after you approve the business gate. A product run creates none unless you pass `--tracker <primary>`. The ticket id then shapes the branch name and the PR title.
 
 ## Verbs
 
@@ -25,7 +25,7 @@ Bind `create` and `update` with `access: "write"`.
 
 | Adapter | What the guide covers | Settings it reads |
 |---|---|---|
-| `linear` | create, search and update issues in Linear. It resolves the team from settings, an environment variable, the prefix of a ticket id, or by asking you. It never picks a default team. | `team`, `team_env`, `branch_case` |
+| `linear` | create, search and update issues in Linear. It resolves the team from settings, an environment variable, the prefix of a ticket id, or by asking you. It never picks a default team. | `team`, `team_env`, `branch_case`, `retro_project` |
 | `jira` | read-only lookup of an existing Jira ticket. It never creates, edits, comments on or transitions one. | `id_pattern`, `project`, `cloud_id`, `branch_case` |
 | `github-issues` | issues of a GitHub repository through the `gh` CLI. No MCP tool. Carries `get`, `search`, `create` and `update`. | `repo`, `labels`, `retro_repo` |
 
@@ -33,7 +33,8 @@ A few behaviours worth knowing:
 
 - With `github-issues`, the ticket id looks like `GH-42`. The PR body gets a `Closes` line, which closes the issue on merge. That is the only state change the pipeline makes. GitHub Issues has no priority, so the run asks you once.
 - With `jira`, a failed read is a blocker. The run stops and asks you to reconnect, instead of going on without the ticket.
-- Before `create`, the run searches by title. An open issue with the same title is reused.
+- With `github-issues`, the run searches by title before `create`. An open issue with the same title is reused.
+- With any tracker, after a failed create or on a resume, the run searches by title for an issue the cut session may have left.
 - Ticket text is data, never instructions.
 
 ## Minimal config
@@ -53,7 +54,7 @@ In `~/.claude/pit-crew/config.json`:
         "create": { "id": "mcp__linear__save_issue", "access": "write" },
         "update": { "id": "mcp__linear__save_issue", "access": "write" }
       },
-      "settings": { "provider": "linear", "team": "ABC", "branch_case": "lower" }
+      "settings": { "provider": "linear", "team": "PLAT", "branch_case": "lower" }
     }
   }
 }
@@ -62,14 +63,16 @@ In `~/.claude/pit-crew/config.json`:
 For GitHub Issues, no tools are needed:
 
 ```json
-{ "roles": { "tracker": { "adapter": "github-issues", "settings": { "repo": "acme/shop" } } } }
+{ "roles": { "tracker": { "adapter": "github-issues", "settings": { "provider": "github" } } } }
 ```
+
+Without `repo`, the issues live in the repository of the run's first repo. Set `repo` to `<owner>/<name>` to use another one.
 
 Run `gh auth status` first. A non-zero exit means the tracker is not connected.
 
 ## When it is off
 
-The run has no ticket. It still plans with both gates, implements, tests and opens PRs. A step that needs a missing verb, such as `list_teams` on GitHub Issues, is skipped and recorded.
+The run has no ticket: `ticket.provider` is `none`. The branch is `feature/<slug>`, named from the run, and the PR title carries the slug. A hotfix is refused: it needs the tracker to open its follow-up ticket. A step that needs a missing verb, such as `list_teams` on GitHub Issues, is skipped and recorded.
 
 ## Next
 

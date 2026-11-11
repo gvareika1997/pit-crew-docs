@@ -1,6 +1,6 @@
 # pit-crew-docs
 
-The documentation site of [Pit Crew](https://github.com/gvareika1997/pit-crew), built with Astro Starlight.
+The documentation site of Pit Crew, built with Astro Starlight. The plugin repository is private and by invitation; this documentation is public.
 
 **Live site: https://gvareika1997.github.io/pit-crew-docs/**
 
@@ -23,17 +23,19 @@ npm run preview    # serves dist/ at http://localhost:4321/pit-crew-docs/
 | Section | Folder under `src/content/docs/` | Source in the pit-crew repo |
 |---|---|---|
 | Introduction | `index.mdx` | `README.md` |
-| Getting started | `getting-started/` | `README.md`, `plugins/pit-crew/README.md`, `skills/setup/` |
+| Getting started | `getting-started/` | `README.md`, `plugins/pit-crew/README.md`, `skills/setup/`; `worked-example.mdx` uses the templates in `commands/` and `skills/`, and two cases under `evals/` |
 | How it works | `how-it-works/` | `commands/*.md`, `skills/pipeline/` and its `resources/`, `skills/triage/`, `skills/brainstorm/`, `skills/pr/`, `hooks/` |
 | Roles and adapters | `roles/` | `plugins/pit-crew/adapters/` |
 | Packs | `packs/` | `docs/your-company-fork.md`, `docs/open-core-design.md`, `examples/pack-minimal/` |
 | Reference | `reference/` | generated, see below |
 
-Written against pit-crew `main` at `42bde34` (core plugin 6.1.0). Every claim comes from those files: when one of them changes, change the page.
+Checked against pit-crew `main` at `1474729` (core plugin 6.2.1). Every claim comes from those files: when one of them changes, change the page.
 
 ## Generated reference
 
-`reference/commands.mdx`, `skills.mdx`, `agents.mdx`, `hooks.mdx` and `glossary.mdx` are generated from the frontmatter of the plugin's commands, skills and agents, from `hooks/hooks.json` and from `CONTEXT.md`. Do not edit them by hand:
+`reference/commands.mdx`, `skills.mdx`, `agents.mdx`, `hooks.mdx` and `glossary.mdx` are generated from the frontmatter of the plugin's commands, skills and agents, from `hooks/hooks.json` and from `CONTEXT.md`. Do not edit them by hand.
+
+The script holds three curated lists: one line per command, one line per skill, and the glossary terms a user meets. It fails when a command or a skill has no line, or when a glossary term is gone from `CONTEXT.md`: add or fix the entry in `scripts/gen-reference.mjs`.
 
 ```bash
 npm run reference -- /path/to/pit-crew

@@ -68,7 +68,7 @@ Every file has one top-level key, `roles`, with one entry per role:
 |---|---|
 | `enabled` | `true` or `false`. Naming an `adapter` turns the role on, so write it mainly to turn a role off in a higher layer. |
 | `adapter` | the name of the guide that explains the tool. Required for every role except `events` and `review`, which work from `settings` alone. A role that is on with no adapter resolves off, with a warning. |
-| `guide` | optional path to the guide, relative to the file's own directory. Without it, Pit Crew looks up the guide by adapter name, first next to your file, then among the adapters that ship with the plugin. |
+| `guide` | optional path to the guide, relative to the file's own directory (for a pack, the pack root; for a repo, the repo root). Without it, Pit Crew looks up the guide by adapter name, first next to your file, then among the adapters that ship with the plugin. |
 | `server` | the name of the MCP server the tools come from. |
 | `tools` | verb to tool id. A plain string means `access: "read"`. The long form is an object with `id` and `access`. An id may end in `*` to cover every tool of a server. |
 | `settings` | the values the guide asks for: a team, a datasource uid, a host pattern. Each role page lists them. |

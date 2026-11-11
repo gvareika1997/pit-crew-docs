@@ -3,7 +3,7 @@ title: stack
 description: The role that says how each repo is installed, built, tested, linted and formatted, and which review checklists apply to it.
 ---
 
-The `stack` role tells a run how to build and test a repo. It is the one role that is never off. With nothing configured, the `generic` adapter runs the commands the repo declares, or the ones its own docs name.
+The `stack` role tells a run how to build and test a repo. It is the one role that is never off. With nothing configured, the adapter follows the repo's kind (see below), and `generic` covers any other repo: it runs the commands the repo declares, or the ones its own docs name.
 
 ## Verbs
 

@@ -24,7 +24,7 @@ The two hexagons are the only human gates of a `full` run. Phase 4 runs only whe
 
 ### 1. Plan
 
-You start it with `/pit-crew:plan`, followed by a ticket id or a description. The run first asks what kind of task it is, unless you gave the type ([Lanes](../lanes/)). If the request is a bug, a read-only triage runs first and reports a root cause. The business analyst then interviews the request and drafts a short spec with no technical vocabulary. That is Gate 1a. After you approve it, the run creates the ticket when a `tracker` role is connected. Then it designs the architecture: which services, which tables, sync, async or cron. On a `full` run that needs one, it publishes a plan page before Gate 1c. Each gate closes with the two-line recap. Before Gate 1c the recap adds one line naming the checks lost to roles that are off. [Plan in detail](../plan/).
+You start it with `/pit-crew:plan`, followed by a ticket id or a description. The run first asks what kind of task it is, unless you gave the type ([Lanes](../lanes/)). If the request is a bug, a read-only triage runs first and reports a root cause. The business analyst then interviews the request and drafts a short spec with no technical vocabulary. That is Gate 1a. After you approve it, the run creates the ticket when a `tracker` role is connected. Then it designs the architecture: which services, which tables, sync, async or cron. On a `full` run that needs one, it publishes a plan page before Gate 1c. Each gate closes with the two-line recap. Before Gate 1c the recap adds one line naming the checks lost to roles that are off or `partial` (on, with a required verb missing). [Plan in detail](../plan/).
 
 **You decide:** whether the business spec is right (1a), and whether the design is right (1c). You also answer the open design questions, which come first.
 
@@ -40,7 +40,7 @@ Phase 2 creates a git worktree per repo, outside your clone. It implements the a
 
 ### 3. Test
 
-Phase 3 runs the test scope sized for each repo, never the whole suite. Then comes the pre-push review: a standards pass and a secret scan. The run pushes, opens the PRs and writes an early retro when the run earned one. It verifies each acceptance criterion in DEV when an `env` role is connected. It resolves the review comments of bots and humans. It then writes the report, a final retro when there is news, and removes the worktrees that hold no work. [Test in detail](../test/).
+Phase 3 runs the test scope sized for each repo, never the whole suite. Then comes the pre-push review: a standards pass (not on `hotfix`), a secret scan, and the local LLM review when `prepush_mode` says `llm`. The run pushes, opens the PRs and writes an early retro when the run earned one. It verifies each acceptance criterion in DEV when an `env` role is connected. It resolves the review comments of bots and humans. It then writes the report, a final retro when there is news, and removes the worktrees that hold no work. [Test in detail](../test/).
 
 **You decide:** nothing, unless a step touches production or finds a secret already committed. Those two always ask.
 
@@ -48,7 +48,7 @@ Phase 3 runs the test scope sized for each repo, never the whole suite. Then com
 
 ### 4. Deploy
 
-Phase 4 is manual. You run `/pit-crew:deploy` with the run's state path once every PR is approved. It merges the PRs one at a time and confirms the version in production. Then it drives each service's rollout to the end. With `--driver human`, you merge and advance each step while it monitors and recommends. It stops and asks at a safety stop: a freeze, a busy environment, a rollback or a canary window with nothing observed. With no `deploy` role connected, it merges and stops. [Deploy in detail](../deploy/).
+Phase 4 is manual. You run `/pit-crew:deploy` with the run's state path once every PR is approved. It merges the PRs one at a time and confirms the version in production. Then it drives each service's rollout to the end. With `--driver human`, you merge and advance each step while it monitors and recommends. It stops and asks at a safety stop: a freeze, a busy environment, a rollback or a canary window with nothing observed. With no `deploy` role connected, it asks you once before the first merge, merges only on a yes, and does not watch the rollout. [Deploy in detail](../deploy/).
 
 **You decide:** when to deploy, who drives the canary steps, and what to do at each safety stop.
 

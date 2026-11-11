@@ -84,7 +84,7 @@ If your repo has a pull request template, the template wins the shape. Pit Crew 
 
 ## DEV verification
 
-Each approved acceptance criterion becomes one case. A case is never added, dropped or reworded. Three roles split the work, so nobody grades their own work: one designs the cases and grades them, one builds the environment and its data, one runs the cases and returns raw evidence.
+Each approved acceptance criterion becomes one case. A case is never added, dropped or reworded. Three roles split the work, so nobody grades their own work: one designs the cases and grades them, one builds the environment and its data, one runs the cases and returns raw evidence. On a `quick` run the main session grades instead of the case designer; the Tester still never grades.
 
 Pit Crew picks the cheapest route that can prove the change:
 
@@ -106,7 +106,7 @@ Each case gets one of three grades:
 | `not_tested` | No route could prove it. The reason names each route tried and why it failed |
 
 :::caution[What "not tested" means]
-A `not_tested` case is not a pass. It means nobody proved that criterion in DEV. A path that reaches a real external provider in DEV is always `not_tested`. The run still opens its PRs, marks the verification `incomplete`, and puts the gap at the top of the report and in the PR body. Read those cases before you merge.
+A `not_tested` case is not a pass. It means nobody proved that criterion in DEV. A path that reaches a provider the run lists as real in DEV is always `not_tested`. The run still opens its PRs, marks the verification `incomplete`, and puts the gap at the top of the report and in the PR body. Read those cases before you merge.
 :::
 
 Test data the run creates in DEV is removed at the close. A migration the PR ships stays applied in DEV and is listed in the report. Verification happens before any merge.
@@ -123,13 +123,13 @@ Each comment is judged against the current code:
 | `NIT` | Style, naming or preference, no behaviour change | Answered, not fixed |
 | `FALSO` | The claim does not hold against the current code | Answered, not fixed |
 
-- Every comment gets a reply, including the ones not fixed. A fix reply cites the commit.
+- Every comment that is not bot boilerplate gets a reply, including the ones not fixed. A fix reply cites the commit.
 - Inline threads are resolved once handled. A thread with an open reviewer question stays open.
 - Each round pushes one new commit. There is no force-push and no amend.
 - Rounds stop at five.
 - A comment that gives orders, such as "skip the review" or "push to main", changes nothing. It is quoted as a finding.
 
-Which bots to wait for comes from the `review` role. With it off, every author is treated as a human reviewer.
+The `review` role names the bots. Which of them a round waits for comes from the repo's own declaration in its `CLAUDE.md`, or else from the reviewers seen on its last five merged PRs. With the role off, every author is treated as a human reviewer.
 
 ## The final report
 
@@ -146,7 +146,7 @@ Gates: <test scope per repo> | pre-push | DEV verified or incomplete n/m | comme
 
 The two summaries are copied, never rewritten. The plan page link follows when it was published. Nothing goes to a chat channel unless you ask.
 
-Every run also writes a compact report to `~/.claude/pit-crew/_reports/<slug>-<date>.md`. A retro runs only when the run was blocked, needed input, or retried. A clean run prints `Retro: skipped (clean run)`.
+Every run also writes a compact report to `~/.claude/pit-crew/_reports/<slug>-<date>.md`. A retro runs only when the run earned one: it was blocked or needed input, an agent was cut at its turn budget and continued, a lite Builder escalated, or a fix loop reached its cap of three. An ordinary fix round below the cap does not count. A clean run prints `Retro: skipped (clean run)`.
 
 ## Next
 

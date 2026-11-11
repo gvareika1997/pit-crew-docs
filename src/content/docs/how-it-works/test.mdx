@@ -38,15 +38,15 @@ With no argument, Pit Crew uses the most recently updated state and says which. 
 
 4. **Push and PRs.** A plain push, never forced. Each PR opens ready for review, never as a draft, with the labels `pit-crew` and `pit-crew-<task_type>`. The title is `<feat|fix>(<ticket id>): <what>`, in your language. See [Evidence and PRs](../evidence-and-prs/).
 
-5. **First bot round.** On a `full` run, Pit Crew waits for each review bot's first verdict and answers it in one push per PR.
+5. **First bot round.** On a `full` run, Pit Crew waits for the first verdict of each review bot the repo expects, up to about ten minutes, then answers in one push per PR. A bot still silent at the deadline is left for the next round.
 
-6. **Verify in DEV.** `df-dev-tester` runs the spec paths in DEV, driving the screen in a browser when a path names one. It returns raw evidence and never grades its own paths. `df-case-designer` grades the evidence against the spec. The route is one of `denv` (an ephemeral environment), `shared_dev`, `in_cluster`, `local` or `none`. A UI-only run verifies locally.
+6. **Verify in DEV.** `df-dev-tester` runs the spec paths in DEV, driving the screen in a browser when a path names one. It returns raw evidence and never grades its own paths. On a `full` run, `df-case-designer` grades the evidence against the spec. On a `quick` run, the main session grades it; the Tester never does. The route is one of `denv` (an ephemeral environment), `shared_dev`, `in_cluster`, `local` or `none`. A UI-only run verifies locally.
 
 7. **Startup gate.** For each non-UI repo, Pit Crew records whether the service reaches readiness on the pushed head. A later push records it again.
 
-8. **Cases reach the PR.** Every PR body except a hotfix's carries the cases, expected against observed. The plan page gets an Evidence tab. A flow doc written in phase 2 is marked shipped.
+8. **Cases reach the PR.** Every PR body except a hotfix's carries the cases, expected against observed. The plan page gets an Evidence tab. A flow doc written in phase 2 is marked `shipped`, or `active` when the feature ships in slices.
 
-9. **Comments to resolved.** `df-comment-resolver` handles new feedback on each PR, from bots and humans, on every channel. Rounds continue until each PR has a verdict on its current head.
+9. **Comments to resolved.** `df-comment-resolver` handles new feedback on each PR, from bots and humans, on every channel. Rounds continue until each PR has a verdict on its current head, at most five rounds per PR. A human reviewer is never polled: Pit Crew reports the state and stops.
 
 10. **Report, retro, cleanup.** Pit Crew removes the DEV fixtures it created, prints the report and sends a notification. It writes a retro only when the run warrants one. It removes the worktrees. The state folder stays for `/pit-crew:deploy`.
 
@@ -62,8 +62,9 @@ Usually nothing. Phase 3 does not stop before the PRs, and it never merges. You 
 
 | Artifact | Where |
 |---|---|
-| PR links, one per repo | The report and the notification |
-| The report: cases, expected against observed, and one gates line | The terminal, and `~/.claude/pit-crew/_reports/<slug>-<date>.md` |
+| PR links, one per repo | The report |
+| The report: cases, expected against observed, and one gates line | The terminal |
+| A compact report from the run's counters | `~/.claude/pit-crew/_reports/<slug>-<date>.md` |
 | The Evidence tab | The plan page, when the run has one |
 | A retro, when warranted | Its path in the phase result |
 | A follow-up ticket | Hotfix only |
@@ -86,9 +87,9 @@ The gates line names the test level that ran per repo, the pre-push counts, the 
 
 | Role | Adds in this phase | When it is off |
 |---|---|---|
-| `env` | DEV verification in a test environment | No DEV verification |
+| `env` | DEV verification in a test environment | Verification runs locally, or each criterion is `not_tested` |
 | `data` | Test data and data corroboration | A criterion that needs a row is not tested |
-| `logs` | Log evidence for each case | No log evidence |
+| `logs` | Log evidence for each case | Evidence comes from the service's own output; a log-only criterion is `not_tested` |
 | `review` | Waits on review bots; may name the local pre-push skill | No review bot; the LLM review step is skipped and said |
 | `tracker` | Retro issues and the hotfix follow-up | Neither is filed |
 

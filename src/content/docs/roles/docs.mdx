@@ -30,6 +30,8 @@ Two safety rules matter here:
 
 ## Minimal config
 
+The `root` path below is a placeholder: use the absolute path of your own checkout.
+
 ```json
 {
   "roles": {
@@ -45,7 +47,7 @@ Two safety rules matter here:
 }
 ```
 
-Without `entry_url`, the lookup is `unavailable` with the reason `entry_url not set`.
+Without `entry_url`, the entry guide is `unavailable` with the reason `entry_url not set`. The run then searches unscoped, with at most 2 searches and 4 fetches.
 
 ## When it is off
 

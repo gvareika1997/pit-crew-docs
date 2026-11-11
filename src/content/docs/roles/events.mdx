@@ -3,7 +3,7 @@ title: events
 description: The role that sends usage events from your runs to an endpoint you choose.
 ---
 
-The `events` role sends usage events about your runs to a collector. It is how telemetry is turned on. It is off by default, and the core names no collector.
+The `events` role sends usage events about your runs to a collector. It is one of two ways to turn telemetry on. The other is `PIT_CREW_TELEMETRY_URL`. It is off by default, and the core names no collector.
 
 ## Verbs
 
@@ -40,7 +40,7 @@ When on, events carry your git email and GitHub login, among other fields. They 
 
 ## When it is off
 
-Nothing is queued and nothing is sent.
+If `PIT_CREW_TELEMETRY_URL` is not set either, nothing is queued and nothing is sent. A valid `PIT_CREW_TELEMETRY_URL` turns telemetry on even with the role off.
 
 ## Next
 

@@ -1,0 +1,205 @@
+---
+title: A worked example
+description: One bug followed from the report to the production rollout, shown with the plugin's own templates and eval cases.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+This page follows one bug through the four phases.
+
+<Aside type="caution" title="What you are looking at">
+The plugin ships no recorded run. Nothing on this page is a captured transcript. Each block is one of two things, and says which:
+
+- **Template**: the format the plugin prescribes for that output. Placeholders stay as `<…>`.
+- **Eval case**: the input of one of the plugin's own evals, with the result its graders require.
+
+Where the plugin has neither, the page says what happens and shows nothing.
+</Aside>
+
+## The bug
+
+The plugin's triage eval uses this report. The repository, `acme-reports`, is fictional.
+
+```text
+Ticket hypothesis (from the reporter): "the daily totals in `acme-reports` miss the
+last day of the range because the end date is treated as exclusive."
+
+UI request:   GET /totals?from=2026-10-01&to=2026-10-07      (the UI says "1 Oct - 7 Oct" inclusive)
+Observed:     totals include 1..6 Oct; 7 Oct rows (412 of them) are missing
+TotalsRepository.java:27  "SELECT day, SUM(amount) FROM sales WHERE day >= :from AND day < :to GROUP BY day"
+TotalsController.java:19  Range r = new Range(from, to);   // no adjustment of `to`
+Spec (docs/totals.md:9):  "`to` is inclusive."
+```
+
+*Eval case: `evals/triage-confirms-valid-cause`.*
+
+## 1 · Plan
+
+You type the command with the report, or with a ticket id:
+
+```text
+/pit-crew:plan "The daily totals in acme-reports miss the last day of the range because the end date is treated as exclusive."
+```
+
+**The task type.** Pit Crew first writes 3 to 5 lines on what it understood. Then it asks the task type once, with the recommended option first and "I don't understand" last. For this sentence the router recommends `full`: it finds no urgency word and no trivial word. The options are:
+
+| Option | Meaning |
+|---|---|
+| Hotfix | Urgent, any size. Minimum tests, validated in production. |
+| Quick & Dirty | Small and known. Little plan, few tests. |
+| Full | The whole pipeline. |
+
+*Template. To skip the question, pass `--type hotfix|quick|full`. See [Lanes](../../how-it-works/lanes/).*
+
+**Triage.** The request is a bug, so a read-only triage runs before any planning. Its report always has these six parts, in this order:
+
+1. **Expected behavior**: what should happen, and where that is written.
+2. **Observed behavior**: what happens, with the symptom's evidence.
+3. **Evidence consulted**: each item with its source and what it showed.
+4. **Root cause**, with its certainty: `confirmed`, `probable` or `undetermined`.
+5. **Not verified**: what could not be checked and what it would take.
+6. **Verdict**: `bug`, `not_a_bug` with its kind, or `undetermined`.
+
+*Template.*
+
+For this bug, the eval's graders pass a report only when it says all of this:
+
+- The root cause is the exclusive upper bound `day < :to`, with `TotalsController.java:19` not adding a day, against the documented inclusive `to`.
+- The certainty is `confirmed`.
+- The evidence cites those `path:line` entries, and the missing 7 Oct rows are the symptom.
+- Nothing was edited.
+
+*Eval case. See [Bug triage](../../how-it-works/triage/).*
+
+**The gates.** A `full` run stops twice for your approval: once on the business draft, once on the architecture. Each gate closes with a two-line recap:
+
+```text
+<localized business label>: <2-3 jargon-free lines: problem and user-visible change>
+<localized architecture label>: <2-3 lines: services, table changes or none, sync/async/cron>
+```
+
+*Template. The plugin has no example of a filled-in business draft, decision table or ticket, so none is shown. See [Plan](../../how-it-works/plan/).*
+
+**The handoff.** After you approve the architecture, Pit Crew checks whether the session can write. If it can, it says in one line that the run continues unattended to the PRs, and goes on. If it cannot, it says so and prints the line to relaunch with:
+
+```text
+/pit-crew:dev <state-path>
+```
+
+*Template.*
+
+## 2 · Dev
+
+Phase 2 runs with no question. It works in a worktree, implements the fix and runs the affected tests. At its end it says which focused tests passed and which scope phase 3 is about to run, and chains into phase 3.
+
+The plugin has no example of a fix diff or of judge findings, so none is shown. See [Dev](../../how-it-works/dev/).
+
+## 3 · Test
+
+**The pull request.** A bug gets a `fix(...)` title:
+
+```text
+fix(<ticket id>): <what>
+```
+
+The body has this shape:
+
+```markdown
+## Summary
+
+<one visual>
+
+<at most three lines: what changes and why, in the glossary's words>
+
+## Evidence
+
+- **Before:** <the red: the reproducing test failing on main, or the old output>
+  **After:** <the same test passing on the branch, or the new output>
+- Test scope: <what ran per repo; the rest is CI's>
+- Startup: <per backend repo: the startup gate's result on the head>
+
+## Merge danger
+
+**Door:** <two-way | one-way: what stays after a revert>
+**Blast radius:** <what breaks if this is wrong>
+
+## Links
+
+- Ticket: <url>
+- <companion PRs, with the deploy order>
+- Migrations applied: <environments, or none>
+- Reviewed locally first: <what the pre-push review found>
+```
+
+*Template, shortened: a one-way door adds a success-signal section. For a bug, the Evidence names the test that reproduces it, red on the PR's base and green on the branch. See [Evidence and PRs](../../how-it-works/evidence-and-prs/).*
+
+**The cases.** Each acceptance criterion becomes a case, verified in DEV. A case line has this format:
+
+```text
+c0-failure: expected 400 naming priority / observed 400 {field:priority}
+```
+
+*Template. This line is the plugin's own format example, not evidence of the date bug.*
+
+**Review comments.** When a comment is right, the fix goes in a new commit and the reply names it:
+
+```text
+Applied: <sha7> <what changed>, in <file>. <url>
+```
+
+*Template.*
+
+**The final report.** Phase 3 ends with a report of this structure:
+
+```text
+<cases block>        <- expected vs observed per case; opens with the e2e warning when DEV is incomplete
+<PR link>            <- one line per repo
+
+<localized business label>: <business.summary, verbatim>
+<localized architecture label>: <architecture.summary, verbatim>
+<localized gates label>: <test scope per repo> <green> | pre-push <counts> | DEV <verified|incomplete n/m> | <localized comment counts> | <localized startup: per repo pass, or skipped/not_applicable with its reason>
+```
+
+*Template. A run with nothing to learn from ends with the line `Retro: skipped (clean run)`. See [Test](../../how-it-works/test/) and [State and reports](../../how-it-works/state-and-reports/).*
+
+## 4 · Deploy
+
+Deploy never starts on its own. Once the PR is approved, you type it with the state path:
+
+```text
+/pit-crew:deploy ~/.claude/pit-crew/<slug>/state.json
+```
+
+The path is required. Pit Crew never guesses the most recent run, because a wrong merge cannot be undone.
+
+**The driver.** Without `--driver human|agent`, it asks once who decides when each canary step advances. The agent option comes first.
+
+**The merge.** Each PR is merged at the exact head recorded in the run:
+
+```bash
+gh pr merge <n> --repo <owner>/<repo> --match-head-commit <head_sha> --squash   # or --merge / --rebase, whichever the repo allows
+```
+
+*Template.*
+
+**With no `deploy` role.** With the agent driver, Pit Crew asks before the first merge:
+
+```text
+Nothing will check a deploy freeze or watch the rollout in production. Merge anyway?
+```
+
+A no merges nothing. After a yes, the report says the rollout was not observed.
+
+**With a `deploy` role.** Pit Crew confirms the version in production and follows the rollout to its end. A canary step advances only on clean observed signals, never on silence. The run closes with one report block per service. The plugin has no template of that block or of the canary updates, so none is shown. See [Deploy](../../how-it-works/deploy/).
+
+## Another ending: not a bug
+
+A triage can find that nothing is broken. The plugin's eval for this case uses a report that a screen "no longer shows cancelled payouts", where an approved ticket hid them by default on purpose and the code does exactly that.
+
+The verdict is `not_a_bug`, and the run stops before planning a fix. It asks once, with these options:
+
+- Close as not a bug (recommended). Pit Crew prints a reply you can paste to the reporter. No ticket, no plan, no PR.
+- Continue as a feature.
+- Continue anyway.
+
+*Eval case: `evals/triage-not-a-bug-stops`.*

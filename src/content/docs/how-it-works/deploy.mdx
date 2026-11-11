@@ -13,7 +13,7 @@ import { Steps } from '@astrojs/starlight/components';
 | **Never** | `--admin`, a force-push, `abort` or `promote` on its own, a PR outside the run, or the next PR before the previous one finished rolling out. |
 
 :::caution[This phase changes production]
-`/pit-crew:deploy` merges each PR into its base branch (usually your main branch) and advances the production rollout. Invoking it is your authorization to merge exactly the PRs recorded in the run, nothing else. A wrong merge cannot be undone.
+`/pit-crew:deploy` merges each PR into its base branch (usually your main branch) and advances the production rollout. With the agent driver, invoking it is your authorization to merge exactly the PRs recorded in the run, nothing else. With the human driver, it authorizes only reads, state writes and the cleanup: you merge. A wrong merge cannot be undone.
 :::
 
 ```text
@@ -40,7 +40,7 @@ The driver decides who advances each step.
 | Advances each canary step | Pit Crew, on clean signals | You; Pit Crew recommends `advance`, `hold` or `not enough data` |
 | Watches, reads and reports | Pit Crew | Pit Crew |
 
-Without the flag, Pit Crew asks once and recommends `agent`. When nothing can be asked, the driver is `agent` and the first progress line says so. A re-run reads the driver from the state. In human mode, Pit Crew merges or advances only on your explicit one-off request.
+Without the flag, or with an invalid value, Pit Crew asks once and recommends `agent`. When nothing can be asked, the driver is `agent` and the first progress line says so. A re-run reads the driver from the state and does not ask again. A re-run with a different `--driver` takes the flag and says so in the first progress line. In human mode, Pit Crew merges or advances only on your explicit one-off request.
 
 ## What happens
 
@@ -58,7 +58,7 @@ For each PR, in the merge order Gate 1c recorded, else repo order:
 
 5. **GitHub gate.** The PR must be approved, or need no review under branch protection, with required checks green. "Changes requested" stops at once and names who.
 
-6. **Merge.** With `--match-head-commit` on the head the evidence was tied to. If the session's permission layer denies the merge, Pit Crew does not retry. It prints the exact command prefixed with `!` and waits for you to run it.
+6. **Merge.** With `--match-head-commit` on the head the rebind recorded. When the evidence was carried, that head can be newer than the one the DEV evidence ran on. If the session's permission layer denies the merge, Pit Crew does not retry. It prints the exact command prefixed with `!` and waits for you to run it.
 
 7. **Version confirmation.** Pit Crew waits until production runs the version the merge produced.
 
@@ -90,7 +90,7 @@ Each wait runs in the background with its own cap. Reaching a cap stops and asks
 
 **Rollback.** A degraded or aborted rollout, a failed analysis run, or a version reverted to the previous one stops at once. So does a healthy rollout with a climbing error rate. Pit Crew shows the evidence and decides the next move with you. It never retries alone and never calls `abort` unless you ask.
 
-When the `deploy` role is off, Pit Crew still merges in order, but asks first: "Nothing will check a deploy freeze or watch the rollout in production. Merge anyway?". The report then says the rollout was not observed.
+When the `deploy` role is off, the merges still go in order. With the agent driver, Pit Crew asks first: "Nothing will check a deploy freeze or watch the rollout in production. Merge anyway?". A no merges nothing. With the human driver, it asks nothing: you merge, and the first progress line says that nothing checks a freeze or watches the rollout. The report then says the rollout was not observed.
 
 ## What you decide
 
@@ -109,13 +109,13 @@ One report block per service: the version now running, canary or plain deploymen
 |---|---|
 | `df-comment-resolver` | Resolves a merge conflict with the base branch during the rebind, agent driver only |
 
-Everything else runs in the main session. Waits run in a script with no model.
+Everything else runs in the main session, except a re-verification, which runs `/pit-crew:test` with its own testing agents. Waits run in a script or a shell loop, with no model.
 
 ## What each role adds
 
 | Role | Adds | When it is off |
 |---|---|---|
-| `deploy` | Service resolution, freeze and busy checks, version confirmation, canary advance | Merge only, after your yes; rollout not observed |
+| `deploy` | Service resolution, freeze and busy checks, version confirmation, canary advance | Merge only, after your yes with the agent driver; rollout not observed |
 | `logs` | The production error and traffic reads of each canary window | Every canary step stops and asks you |
 
 ## When it stops
