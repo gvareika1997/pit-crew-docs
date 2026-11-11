@@ -2,6 +2,8 @@
 
 The documentation site of [Pit Crew](https://github.com/gvareika1997/pit-crew), built with Astro Starlight.
 
+**Live site: https://gvareika1997.github.io/pit-crew-docs/**
+
 ## Run it locally
 
 Needs Node 22.12 or newer.
