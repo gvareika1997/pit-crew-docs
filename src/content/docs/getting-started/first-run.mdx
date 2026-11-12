@@ -18,6 +18,18 @@ Open Claude Code in the repo you want to change, then start from a ticket or fro
 
 The ticket form needs the `tracker` role connected. The prompt form works with nothing connected.
 
+<figure>
+  <img
+    src={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/img/first-run.gif`}
+    alt="A terminal runs /pit-crew:plan on a small API. Pit Crew reads the repo, recaps the request and asks the task type, with Full marked as recommended."
+    width="1400"
+    height="820"
+    loading="lazy"
+    style="width: 100%; height: auto; border-radius: 8px;"
+  />
+  <figcaption>A real run with nothing connected, up to its first question.</figcaption>
+</figure>
+
 <Aside type="tip" title="Write a precise prompt">
 Say what, where and for whom. "Integrate provider X in service Y to process payins in countries Z" works. "Integrate X" does not.
 </Aside>
