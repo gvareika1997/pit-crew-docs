@@ -1,0 +1,29 @@
+# Terms the public docs must not use. Read by scripts/check.mjs, which runs in `npm run build` and in CI.
+# One case-insensitive regex per line. Lines starting with # are comments.
+# Company names are not listed here, so this public file does not name them: they come from the
+# git-ignored .docs-banned file locally and from the DOCS_BANNED secret in CI.
+#
+# A line `allow <path> <literal>` exempts that exact text in that one file only.
+
+# The old industrial analogy. The one analogy is the racing team.
+production engineers?
+\bfactor(y|ies)\b
+\bplants?\b
+\b(production|assembly) lines?\b
+\b(on|watch|is) the line\b
+\btolerances?\b
+poka[- ]?yoke
+\bandon\b
+\bjidoka\b
+
+# Promises and names the message drops.
+agents do the rest
+\bautodev\b
+\blearnings\b
+knowledge loop
+
+# Placeholders that must not ship.
+TO-BE-DEFINED
+
+# The install page waits for the code repository to be public; its access contact stays a placeholder until then.
+allow src/content/docs/getting-started/install.mdx ACCESS-CONTACT-TO-BE-DEFINED

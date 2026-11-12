@@ -1,76 +1,72 @@
 ---
-title: Why it changes the job
-description: With Pit Crew a systems engineer stops laying bricks and works like a production engineer. What changes, what stays yours, and what it asks of you.
+title: Why Pit Crew
+description: You drive the product. Your crew of agents designs it with you, builds it, tests it and reviews it. What Pit Crew is, how the work splits between you and the crew, and what it asks of you.
 ---
 
-Systems engineering can now look like production engineering.
+You drive the product. Your crew of agents designs it with you, builds it, tests it and reviews it.
 
-Until now, a systems engineer was closer to a craftsman who designs the building and also lays every brick by hand. You wrote the code line by line. The bottleneck was typing.
+Pit Crew is a crew of agents that works next to the engineer, inside Claude Code. The engineer decides what gets built, for whom and with which architecture. The agents help think it through, write the code, test it, review it and come back with a pull request and the proof for each criterion. It works on any repo, and each company connects its own tools.
 
-A production engineer does not stand at the press and stamp each part. They design the product, the process and the quality controls, and they answer for what leaves the plant. The machines make the parts to the tolerances the engineer set. When a part comes out wrong, the engineer does not stamp faster. They fix the process.
+## A racing team, not a single mechanic
 
-With agents, you can work that way. The agents write the code. Your job is to think the whole problem through, decide how it is built, make sure it is built well and take it to production.
+A driver does not win alone. Around them is a whole team, and each part of it has a job.
 
-| Production engineer | Systems engineer with Pit Crew |
+| In a racing team | With Pit Crew |
 |---|---|
-| Designs the product, the process and the tolerances | Designs the solution, the architecture, the contracts and the path to production |
-| The machines make the parts | The agents write the code |
-| Quality control on the line, not only inspection at the end | Tests, review and evidence while the change is built |
-| Answers for what leaves the plant | Answers for what reaches production and works |
-| When it goes wrong, improves the process | When it goes wrong, improves the design, the tests and the tools |
+| The driver decides the strategy | You decide what gets built, for whom and with which architecture |
+| Race engineers help design and plan the race | Agents interview you about the business, read the code and draft the design you approve |
+| The pit crew works fast and in order | Agents write the code and test it, in a worktree, never in your clone |
+| Telemetry and the pit wall check every lap | The diff is reviewed before the push (on a `full` run, by a separate judge), and the pull request carries the proof for each criterion |
+| The debrief after the race | A run that went wrong ends in a retro, and its lesson goes into the process |
 
-Pit Crew is the line. It gives each of those rows a place to happen.
+The car is the same on every circuit. The core of Pit Crew is portable, and at each company you connect that company's tools to it. See [Roles and bindings](../../roles/).
 
-## What changes in your day
+## Three principles
 
-### Your work moves to the start
+### 1. You decide, they execute with you
 
-You spend your time on two decisions, and both come before any code exists:
+There are two decisions before any code exists, and both are yours:
 
 - **Gate 1a · business.** What the change does, for whom, and how you will know it works. Plain words, no technical vocabulary.
 - **Gate 1c · architecture.** Which services change, which data changes, the contracts between them, and the risks.
 
-This is where you design. Each gate closes with a two-line recap, one business line and one architecture line. That recap is what you approve. The final report repeats it word for word, so you can compare what shipped with what you agreed to.
+You do not reach them alone. Before Gate 1a an agent interviews you about the business and drafts the spec and the acceptance criteria. Before Gate 1c agents read the code, find what the change touches and draft the design, the decision table and the plan page. You correct, decide and approve.
 
-The `quick` and `hotfix` lanes ask once. See [Where you work: the two gates](../your-two-gates/) and [Lanes](../lanes/).
+Each gate closes with a two-line recap, one business line and one architecture line. That recap is what you approve. The final report repeats it word for word, so you can compare what shipped with what you agreed to.
 
-### You set the tolerances
+After you approve the architecture, the run checks whether the session can write files. If it can, the crew continues on its own toward green pull requests and returns the links. It stops to ask only for an action on production or a secret already committed. It also stops, with the log path, when a build or test is still red after three fix rounds.
 
-A production engineer writes down the tolerance before the machine runs. Here the tolerances are the acceptance criteria you approve at Gate 1a and the design you approve at Gate 1c. Everything after is measured against them: the judge reads the diff against them, and the PR reports each criterion as proved or not tested.
+The `quick` and `hotfix` lanes ask once. See [Where you work: the two gates](../your-two-gates/), [Lanes](../lanes/) and [What the agents do](../what-the-agents-do/).
 
-The repo's own rules are tolerances too. Pit Crew follows the `CLAUDE.md` of each repo. A repo without one gets generic code.
+### 2. Nothing without proof
 
-### The agents build
+The acceptance criteria you approve at Gate 1a are what the run is measured against. Each one comes back in the pull request proved, or marked as not proven. A run never closes green on a guess.
 
-After you approve the architecture, the run checks whether the session can write files. If it can, it continues on its own to green pull requests and returns the links. It does not stop to ask between phases. It stops only for an action on production or a secret already committed.
+On a `full` run the agent that wrote the code does not grade it: a separate judge attacks the whole diff against your intent and the criteria before the push, and a pre-push gate checks the repo's own rules and scans for secrets. The `quick` and `hotfix` lanes skip the judge; see [Lanes](../lanes/) and [Guarantees](../guarantees/).
 
-It implements in a git worktree, never in your clone. See [What the agents do](../what-the-agents-do/).
+The repo's own rules count too. Pit Crew follows the `CLAUDE.md` of each repo. A repo without one gets generic code.
 
-### Quality control is on the line
+### 3. Every lap leaves the crew better
 
-Inspection does not wait for the end. The run tests while it builds, an adversarial judge attacks the diff before the push, a pre-push gate scans for secrets, and the PR carries the evidence for each criterion. A criterion the run could not prove is reported as not tested. It never closes green on a guess. See [Guarantees](../guarantees/).
+A run that was blocked or retried earns a retro. The lesson goes into the process, not into trying harder next time: a sharper acceptance criterion, a clearer `CLAUDE.md`, a test that would have caught it. With a `tracker` role connected, the retro's improvements become issues. See [State and reports](../state-and-reports/).
 
-### You answer for production
+## You answer for production
 
 The run leaves the PRs green with their evidence. A person still reviews and approves them. Then you start the merge and the rollout with `/pit-crew:deploy`, and you decide at each safety stop: a freeze, a busy environment, a canary window with nothing observed, a rollback.
 
 :::note[Roadmap: the path to production is not unattended]
-Today the unattended part of a run ends at green pull requests. Merging and rolling out happen only when you type `/pit-crew:deploy`. A run that carries an approved change to production on its own does not exist. Read every "the agents do the rest" on this site as "up to the PR".
+Today the unattended part of a run ends at green pull requests. Merging and rolling out happen only when you type `/pit-crew:deploy`. A run that carries an approved change to production on its own does not exist.
 :::
-
-### When it goes wrong, you fix the process
-
-A run that was blocked or retried earns a retro, and with a `tracker` role connected its improvements become issues. The lesson belongs in the process, not in typing faster: a sharper acceptance criterion, a clearer `CLAUDE.md`, a test that would have caught it. See [State and reports](../state-and-reports/).
 
 ## What stays yours
 
-| Yours | The agents' |
+| Yours | Your crew's |
 |---|---|
 | The business spec and its acceptance criteria | The business draft you correct and approve |
 | The design: services, data, contracts, risks | The decision table and the plan page you read |
 | The PR approval | The diff, the tests and the evidence in the PR body |
 | Starting the deploy and deciding at each safety stop | Merging the approved PRs and watching the rollout, once you start it |
-| Fixing the process when a run goes wrong | The retro that says what blocked or surprised it |
+| Changing the process when a run goes wrong | The retro that says what blocked or surprised it |
 
 ## What this is not
 
@@ -80,7 +76,7 @@ A run that was blocked or retried earns a retro, and with a `tracker` role conne
 | An unattended path to production | You start the deploy and decide at its safety stops. See the roadmap note above. |
 | A replacement for CI | Phase 3 runs the test scope sized for each repo, never the whole suite. CI owns broad validation. |
 | A source of conventions | It follows the `CLAUDE.md` of each repo. |
-| A guarantee of full coverage | A criterion it cannot prove, for example with no `env` role connected, is reported as not tested. |
+| A guarantee of full coverage | A criterion it cannot prove, for example with no `env` role connected, is reported as not proven. |
 | A permission bypass | It probes whether the session can write. It cannot change the permission mode. |
 | A tool that sends your data by default | Telemetry is off until you or a pack turn it on. See [Telemetry](../../roles/telemetry/). |
 

@@ -18,12 +18,12 @@ export default defineConfig({
     starlight({
       title: 'Pit Crew',
       description:
-        'With Pit Crew a systems engineer works like a production engineer: you design and approve at two gates, the agents build, and every pull request comes back with evidence.',
+        'You drive the product. Your crew of agents designs it with you, builds it, tests it and reviews it, up to a pull request with the proof for each criterion.',
       logo: { src: './src/assets/pit-crew-sticker.svg', alt: '' },
       favicon: '/favicon.svg',
       customCss: ['./src/styles/theme.css'],
       lastUpdated: true,
-      // The plugin repository is private, so the link goes to this site's own repository.
+      // The social link goes to this site's own repository.
       social: [
         { icon: 'github', label: 'Docs source on GitHub', href: 'https://github.com/gvareika1997/pit-crew-docs' },
       ],
@@ -31,7 +31,7 @@ export default defineConfig({
         { label: 'Introduction', link: '/' },
         {
           label: 'Why',
-          items: [{ label: 'Why it changes the job', slug: 'how-it-works/why' }],
+          items: [{ label: 'Why Pit Crew', slug: 'how-it-works/why' }],
         },
         {
           label: 'How you work',

@@ -1,7 +1,7 @@
 // Post-build guards. Run by `npm run build`; any failure exits 1.
 //  1. Every internal link and asset in dist/ resolves.
 //  2. Every page is in the sidebar (no orphans), and every sidebar slug has a page.
-//  3. Neutral core: no file contains a term listed in .docs-banned or DOCS_BANNED.
+//  3. Neutral core and message: no file contains a term listed in banned-terms.txt, .docs-banned or DOCS_BANNED.
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -53,16 +53,39 @@ const slugs = [...config.matchAll(/slug:\s*'([^']+)'/g)].map((m) => m[1]);
 for (const p of pages) if (p !== '' && !slugs.includes(p)) errors.push(`page not in the sidebar: ${p}`);
 for (const s of slugs) if (!pages.includes(s)) errors.push(`sidebar slug with no page: ${s}`);
 
-// 3. Neutral core. The terms live outside the repo: one regex per line in .docs-banned
-//    (git-ignored), or the DOCS_BANNED variable. With neither, this guard is skipped.
-const bannedSource = fs.existsSync('.docs-banned')
-  ? fs
-      .readFileSync('.docs-banned', 'utf8')
-      .split('\n')
-      .map((l) => l.trim())
-      .filter(Boolean)
-      .join('|')
-  : (process.env.DOCS_BANNED ?? '');
+// 3. Neutral core and message. One regex per line, from three sources that add up:
+//    banned-terms.txt (committed, the message terms), .docs-banned (git-ignored) and the
+//    DOCS_BANNED variable (CI secret). The last two hold the terms the public repo must not
+//    name. `allow <path> <literal>` exempts that text in that one file. With DOCS_BANNED_REQUIRED
+//    set, a missing DOCS_BANNED fails the check instead of skipping those terms.
+const lines = (text) =>
+  text
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l && !l.startsWith('#'));
+const sources = [];
+const entries = [];
+for (const file of ['banned-terms.txt', '.docs-banned']) {
+  if (!fs.existsSync(file)) continue;
+  sources.push(file);
+  entries.push(...lines(fs.readFileSync(file, 'utf8')));
+}
+const secret = lines(process.env.DOCS_BANNED ?? '');
+if (secret.length) {
+  sources.push('DOCS_BANNED');
+  entries.push(...secret);
+}
+if (process.env.DOCS_BANNED_REQUIRED && !secret.some((e) => !/^allow\s/.test(e))) {
+  errors.push('DOCS_BANNED is required here but has no banned term: set the DOCS_BANNED secret');
+}
+const allows = {};
+const terms = [];
+for (const e of entries) {
+  const m = e.match(/^allow\s+(\S+)\s+(.+)$/);
+  if (m) (allows[m[1]] ??= []).push(m[2]);
+  else terms.push(e);
+}
+const bannedSource = terms.join('|');
 if (bannedSource) {
   const banned = new RegExp(bannedSource, 'i');
   const tracked = ['src', 'scripts', '.github', 'README.md', 'astro.config.mjs', 'package.json'];
@@ -70,10 +93,12 @@ if (bannedSource) {
     !fs.existsSync(p) ? [] : fs.statSync(p).isDirectory() ? walk(p, ['.mdx', '.md', '.mjs', '.yml', '.astro', '.css', '.ts']) : [p],
   );
   for (const f of files) {
+    const allowed = allows[f.split(path.sep).join('/')] ?? [];
     fs.readFileSync(f, 'utf8')
       .split('\n')
       .forEach((line, i) => {
-        if (banned.test(line)) errors.push(`banned term: ${f}:${i + 1}: ${line.trim().slice(0, 90)}`);
+        const rest = allowed.reduce((l, a) => l.split(a).join(''), line);
+        if (banned.test(rest)) errors.push(`banned term: ${f}:${i + 1}: ${line.trim().slice(0, 90)}`);
       });
   }
 }
@@ -83,4 +108,4 @@ if (errors.length) {
   console.error(`\ncheck: ${errors.length} problem(s)`);
   process.exit(1);
 }
-console.log(`check: ${pages.length} pages, ${links} internal links, sidebar complete, banned terms ${bannedSource ? 'checked' : 'not configured'}`);
+console.log(`check: ${pages.length} pages, ${links} internal links, sidebar complete, banned terms ${bannedSource ? `checked (${terms.length} from ${sources.join(', ')}, ${Object.values(allows).flat().length} allowed)` : 'not configured'}`);
