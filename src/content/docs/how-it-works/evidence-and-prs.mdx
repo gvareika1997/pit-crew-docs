@@ -30,6 +30,38 @@ A small plan skips the page. The gate question then gives the reason, and the pl
 | Evidence | After the DEV verdict | One row per acceptance criterion: status, expected against observed, validated links |
 | UI captures | When the run took screenshots | One image per screen, mode and round. The link ends in `#captures` |
 
+A plan page from a real run, a product-mode change that adds a web page to a small sample API:
+
+<figure>
+  <img
+    src={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/img/plan-page-product.jpg`}
+    alt="Product tab: problem, who, what changes, nine acceptance criteria and out of scope."
+    loading="lazy"
+    style="width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--sl-color-gray-5);"
+  />
+  <figcaption>Product tab.</figcaption>
+</figure>
+
+<figure>
+  <img
+    src={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/img/plan-page-technical.jpg`}
+    alt="Technical tab: an architecture diagram, a sequence diagram, then the service and data sections."
+    loading="lazy"
+    style="width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--sl-color-gray-5);"
+  />
+  <figcaption>Technical tab, top part.</figcaption>
+</figure>
+
+<figure>
+  <img
+    src={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/img/plan-page-ui.jpg`}
+    alt="UI tab: two layout options for the tasks screen, with a live mockup of the simple list."
+    loading="lazy"
+    style="width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--sl-color-gray-5);"
+  />
+  <figcaption>UI tab: two mockup options for the one screen.</figcaption>
+</figure>
+
 The page starts private. To share it, open it, choose **Share** and pick your organization. It holds no secrets, tokens, customer data or production values.
 
 If the page cannot be published, the gate question says why. The valid reasons are: the Artifact tool is missing, the publish failed, the diagrams failed to render twice, or a critical UI review finding. "The ticket is enough" is not a reason.
