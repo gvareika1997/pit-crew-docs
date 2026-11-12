@@ -70,11 +70,13 @@ for (const file of ['banned-terms.txt', '.docs-banned']) {
   sources.push(file);
   entries.push(...lines(fs.readFileSync(file, 'utf8')));
 }
-if (process.env.DOCS_BANNED) {
+const secret = lines(process.env.DOCS_BANNED ?? '');
+if (secret.length) {
   sources.push('DOCS_BANNED');
-  entries.push(...lines(process.env.DOCS_BANNED));
-} else if (process.env.DOCS_BANNED_REQUIRED) {
-  errors.push('DOCS_BANNED is required here but empty: set the DOCS_BANNED secret');
+  entries.push(...secret);
+}
+if (process.env.DOCS_BANNED_REQUIRED && !secret.some((e) => !/^allow\s/.test(e))) {
+  errors.push('DOCS_BANNED is required here but has no banned term: set the DOCS_BANNED secret');
 }
 const allows = {};
 const terms = [];

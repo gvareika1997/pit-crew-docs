@@ -16,7 +16,7 @@ A driver does not win alone. Around them is a whole team, and each part of it ha
 | The driver decides the strategy | You decide what gets built, for whom and with which architecture |
 | Race engineers help design and plan the race | Agents interview you about the business, read the code and draft the design you approve |
 | The pit crew works fast and in order | Agents write the code and test it, in a worktree, never in your clone |
-| Telemetry and the pit wall check every lap | A different agent reviews the diff, and the pull request carries the proof for each criterion |
+| Telemetry and the pit wall check every lap | The diff is reviewed before the push (on a `full` run, by a separate judge), and the pull request carries the proof for each criterion |
 | The debrief after the race | A run that went wrong ends in a retro, and its lesson goes into the process |
 
 The car is the same on every circuit. The core of Pit Crew is portable, and at each company you connect that company's tools to it. See [Roles and bindings](../../roles/).
@@ -34,7 +34,7 @@ You do not reach them alone. Before Gate 1a an agent interviews you about the bu
 
 Each gate closes with a two-line recap, one business line and one architecture line. That recap is what you approve. The final report repeats it word for word, so you can compare what shipped with what you agreed to.
 
-After you approve the architecture, the run checks whether the session can write files. If it can, the crew continues on its own up to green pull requests and returns the links. It stops only for an action on production or a secret already committed.
+After you approve the architecture, the run checks whether the session can write files. If it can, the crew continues on its own toward green pull requests and returns the links. It stops to ask only for an action on production or a secret already committed. It also stops, with the log path, when a build or test is still red after three fix rounds.
 
 The `quick` and `hotfix` lanes ask once. See [Where you work: the two gates](../your-two-gates/), [Lanes](../lanes/) and [What the agents do](../what-the-agents-do/).
 
@@ -42,7 +42,7 @@ The `quick` and `hotfix` lanes ask once. See [Where you work: the two gates](../
 
 The acceptance criteria you approve at Gate 1a are what the run is measured against. Each one comes back in the pull request proved, or marked as not proven. A run never closes green on a guess.
 
-The agent that wrote the code does not grade it. On a `full` run a separate judge attacks the whole diff against your intent and the criteria before the push, and a pre-push gate checks the repo's own rules and scans for secrets. See [Guarantees](../guarantees/).
+On a `full` run the agent that wrote the code does not grade it: a separate judge attacks the whole diff against your intent and the criteria before the push, and a pre-push gate checks the repo's own rules and scans for secrets. The `quick` and `hotfix` lanes skip the judge; see [Lanes](../lanes/) and [Guarantees](../guarantees/).
 
 The repo's own rules count too. Pit Crew follows the `CLAUDE.md` of each repo. A repo without one gets generic code.
 

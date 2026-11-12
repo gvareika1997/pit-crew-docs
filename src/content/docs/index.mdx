@@ -34,14 +34,14 @@ Think of a racing team. You are the driver, and you decide the strategy. Race en
 |---|---|
 | What gets built and for whom: the business spec and its acceptance criteria, at Gate 1a | Interviews you about the business, then drafts the spec and the criteria for you to correct |
 | How it is built: services, data, contracts and risks, at Gate 1c | Reads the code, finds what the change touches, and drafts the design and the plan page you read |
-| Whether the pull request is right | Writes the code, tests it, has a different agent attack the diff, and opens the PR with the proof for each criterion |
+| Whether the pull request is right | Writes the code, tests it, reviews it before the push (on a `full` run, with a separate judge), and opens the PR with the proof for each criterion |
 | When to start the deploy, and what to do at each safety stop | Merges the approved PRs and watches the rollout, once you start it |
 | What changes when a run goes wrong | Writes the retro that says what blocked or surprised the run |
 
 Three principles hold it together:
 
 1. **You decide, they execute with you.** There are two decisions before any code exists: the business one at Gate 1a and the architecture one at Gate 1c. The agents help you reach both, then do the work up to the pull request.
-2. **Nothing without proof.** Each acceptance criterion comes back proved or marked as not proven, and a different agent from the one that wrote the code reviews it.
+2. **Nothing without proof.** Each acceptance criterion comes back proved or marked as not proven. On a `full` run, a different agent from the one that wrote the code reviews it; the [lanes](how-it-works/lanes/) say which reviews a `quick` or `hotfix` run skips.
 3. **Every lap leaves the crew better.** A run that was blocked or retried ends in a retro, and its lesson goes into the process.
 
 [Why Pit Crew](how-it-works/why/)
