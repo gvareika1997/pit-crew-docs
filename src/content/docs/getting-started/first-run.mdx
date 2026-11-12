@@ -88,7 +88,27 @@ Anything you add mid-run gets one line in the next reply: what it changes, or wh
 
 You see the business description, at most one page, with no technical vocabulary. Before it, the open questions come in rounds. Each round asks every question whose prerequisites are settled, easiest first.
 
+<figure>
+  <img
+    src={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/img/business-questions.gif`}
+    alt="Pit Crew asks the open business points one tab at a time, each with an Accept (Recommended) option, then a review of the answers."
+    loading="lazy"
+    style="width: 100%; height: auto; border-radius: 8px;"
+  />
+  <figcaption>Business questions in one round, each with a recommended answer.</figcaption>
+</figure>
+
 Above the approval question sits a **Closed without asking** block. Each line is a point the run decided on its own, with its source: a line of code, data, your own words or an earlier decision. A ticket is never a source. Its claims are treated as hypotheses to verify.
+
+<figure>
+  <img
+    src={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/img/business-gate.gif`}
+    alt="The business spec scrolls by, with decisions, acceptance criteria and out-of-scope items, and ends on the Gate 1a approval question."
+    loading="lazy"
+    style="width: 100%; height: auto; border-radius: 8px;"
+  />
+  <figcaption>The business gate: the spec, its acceptance criteria and the approval question.</figcaption>
+</figure>
 
 What to answer:
 
@@ -105,6 +125,16 @@ If you change an answer later, only the points that depend on it are asked again
 You see a decision table: which repos and services change, and how. Open design decisions are asked before the table, so the table shows answers, not options. Points closed at the business gate are not asked again.
 
 When the change needs one, the question carries a link to the plan page. Read it first. Under the table you see what the preflight could not provide, and which checks will be reported as not tested because of it. Then the two-line recap.
+
+<figure>
+  <img
+    src={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/img/architecture-gate.gif`}
+    alt="The architecture summary with risks, preflight results and the roles that are off, ending on the Gate 1c approval question."
+    loading="lazy"
+    style="width: 100%; height: auto; border-radius: 8px;"
+  />
+  <figcaption>The architecture gate on a small change. It needs no plan page, so the question says why.</figcaption>
+</figure>
 
 What to answer:
 
