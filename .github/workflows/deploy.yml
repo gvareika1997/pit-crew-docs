@@ -26,6 +26,11 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+        env:
+          # Terms the public repo must not name (company names). The message terms are in banned-terms.txt.
+          DOCS_BANNED: ${{ secrets.DOCS_BANNED }}
+          # A push to main must check them; a pull request from a fork gets no secrets.
+          DOCS_BANNED_REQUIRED: ${{ github.event_name != 'pull_request' && 'true' || '' }}
       - if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:

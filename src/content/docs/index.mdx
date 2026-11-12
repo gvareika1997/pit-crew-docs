@@ -1,14 +1,14 @@
 ---
 title: Pit Crew
-description: With Pit Crew a systems engineer works like a production engineer. You design the product, the process and the tolerances; the agents write the code.
+description: Pit Crew is a crew of agents that works next to the engineer, inside Claude Code. You decide what gets built, for whom and with which architecture; the agents help you think it through and come back with a pull request and the proof for each criterion.
 template: splash
 hero:
-  tagline: You design the product, the process and the tolerances. The agents write the code. You answer for what reaches production.
+  tagline: You drive the product. Your crew of agents designs it with you, builds it, tests it and reviews it.
   image:
     file: ../../assets/pit-crew-sticker.svg
     alt: Pit Crew sticker
   actions:
-    - text: Why it changes the job
+    - text: Why Pit Crew
       link: how-it-works/why/
       icon: right-arrow
     - text: How you work
@@ -22,27 +22,33 @@ import banner from '../../assets/pit-crew-banner.svg';
 
 <img class="banner-img" src={banner.src} alt="Pit Crew: the dev at the wheel, the agents in the pit" />
 
-## Why
+## What it is
 
-Until now a systems engineer designed the building and also laid every brick by hand. The bottleneck was typing the code.
+Pit Crew is a crew of agents that works next to the engineer, inside Claude Code. The engineer decides what gets built, for whom and with which architecture. The agents help think it through, write the code, test it, review it and come back with a pull request and the proof for each criterion. It works on any repo, and each company connects its own tools.
 
-A production engineer does not stand at the press and stamp each part. They design the product, the process and the quality controls, and they answer for what leaves the plant. When a part comes out wrong, they do not stamp faster. They fix the process.
+Think of a racing team. You are the driver, and you decide the strategy. Race engineers help you design and plan the change. The pit crew builds and tests it fast. Telemetry and the pit wall review it and check it against evidence. After every race there is a debrief, and each run leaves the crew better for the next one.
 
-With agents, a systems engineer can work that way. Pit Crew is the line that makes it practical.
+## What you decide, what your crew does
 
-| Production engineer | Systems engineer with Pit Crew |
+| What you decide | What your crew does |
 |---|---|
-| Designs the product, the process and the tolerances | Designs the solution, the architecture, the contracts and the path to production |
-| The machines make the parts | The agents write the code |
-| Quality control on the line, not only inspection at the end | Tests, review and evidence while the change is built |
-| Answers for what leaves the plant | Answers for what reaches production and works |
-| When it goes wrong, improves the process | When it goes wrong, improves the design, the tests and the tools |
+| What gets built and for whom: the business spec and its acceptance criteria, at Gate 1a | Interviews you about the business, then drafts the spec and the criteria for you to correct |
+| How it is built: services, data, contracts and risks, at Gate 1c | Reads the code, finds what the change touches, and drafts the design and the plan page you read |
+| Whether the pull request is right | Writes the code, tests it, has a different agent attack the diff, and opens the PR with the proof for each criterion |
+| When to start the deploy, and what to do at each safety stop | Merges the approved PRs and watches the rollout, once you start it |
+| What changes when a run goes wrong | Writes the retro that says what blocked or surprised the run |
 
-[Why it changes the job](how-it-works/why/)
+Three principles hold it together:
+
+1. **You decide, they execute with you.** There are two decisions before any code exists: the business one at Gate 1a and the architecture one at Gate 1c. The agents help you reach both, then do the work up to the pull request.
+2. **Nothing without proof.** Each acceptance criterion comes back proved or marked as not proven, and a different agent from the one that wrote the code reviews it.
+3. **Every lap leaves the crew better.** A run that was blocked or retried ends in a retro, and its lesson goes into the process.
+
+[Why Pit Crew](how-it-works/why/)
 
 ## How you work: two gates
 
-Your time goes to two decisions, and both come before any code exists.
+Your time goes to two decisions, and both come before any code exists. The agents help you get there: they interview you, read the code and draft what you approve.
 
 - **Gate 1a · business**, the product gate. What the change does, for whom, and the acceptance criteria. No technical vocabulary.
 - **Gate 1c · architecture**, the technical gate. The design, the contracts between services, the data changes and the risks.

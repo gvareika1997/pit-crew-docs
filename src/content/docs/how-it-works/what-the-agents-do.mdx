@@ -3,6 +3,8 @@ title: What the agents do
 description: From Gate 1c to green pull requests, the agents implement, judge, test, scan and open the PRs with evidence. What they do, what stays human, and where the unattended part ends.
 ---
 
+The agents do not start at Gate 1c. They help you reach both gates. On a bug, `df-investigator` answers the triage questions first. Before Gate 1a, `df-business-analyst` reads the code, interviews you about the business and drafts the spec and the acceptance criteria. Before Gate 1c, Pit Crew drafts the design, and dispatches `df-architect` when ownership is unclear, several designs are viable, or the change touches schema, infrastructure or a cross-service contract. You correct and decide. See [Plan](../plan/).
+
 You approved the design at Gate 1c. From here you do not write the code. If the session can write files, the run continues on its own and returns pull request links.
 
 If the session cannot write, for example in plan mode, the run says so and prints the line to relaunch it. A skill cannot grant itself permissions.
@@ -40,7 +42,7 @@ Be clear about this. The agents do not take a change to production on their own.
 
 Typing `/pit-crew:deploy` authorizes the merge of exactly that run's PRs. You can also drive it yourself: with `--driver human` you merge and advance each step while Pit Crew monitors and recommends. See [Deploy](../deploy/).
 
-After you validate the artifact, you do not go back to typing code. You authorize, and you watch the line.
+After you validate the artifact, you do not go back to typing code. You authorize, and you follow the run.
 
 ## Today, and the roadmap
 
@@ -52,7 +54,7 @@ After you validate the artifact, you do not go back to typing code. You authoriz
 | Safety stops in the rollout | Always ask you | |
 
 :::caution[Do not read more into it]
-"The agents do the rest" means up to green pull requests with evidence. Nothing in Pit Crew merges or deploys without you starting it.
+Whatever the agents do on their own ends at green pull requests with evidence. Nothing in Pit Crew merges or deploys without you starting it.
 :::
 
 ## Which agents
