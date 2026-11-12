@@ -1,18 +1,18 @@
 ---
 title: Pit Crew
-description: A four-phase feature delivery pipeline for Claude Code. You approve the plan; the agents do the rest.
+description: With Pit Crew a systems engineer works like a production engineer. You design the product, the process and the tolerances; the agents write the code.
 template: splash
 hero:
-  tagline: From a ticket to a reviewed, verified pull request. You approve the plan; the agents do the rest.
+  tagline: You design the product, the process and the tolerances. The agents write the code. You answer for what reaches production.
   image:
     file: ../../assets/pit-crew-sticker.svg
     alt: Pit Crew sticker
   actions:
-    - text: Install
-      link: getting-started/install/
+    - text: Why it changes the job
+      link: how-it-works/why/
       icon: right-arrow
-    - text: Your first run
-      link: getting-started/first-run/
+    - text: How you work
+      link: how-it-works/your-two-gates/
       variant: minimal
 ---
 
@@ -22,33 +22,98 @@ import banner from '../../assets/pit-crew-banner.svg';
 
 <img class="banner-img" src={banner.src} alt="Pit Crew: the dev at the wheel, the agents in the pit" />
 
-**4 phase commands · 17 skills · 16 agents · 9 roles you connect · no telemetry by default**
+## Why
 
-## Start here
+Until now a systems engineer designed the building and also laid every brick by hand. The bottleneck was typing the code.
 
-| If you… | Go to |
+A production engineer does not stand at the press and stamp each part. They design the product, the process and the quality controls, and they answer for what leaves the plant. When a part comes out wrong, they do not stamp faster. They fix the process.
+
+With agents, a systems engineer can work that way. Pit Crew is the line that makes it practical.
+
+| Production engineer | Systems engineer with Pit Crew |
 |---|---|
-| have never installed it | [Install](getting-started/install/) |
-| installed it and want to ship something | [Your first run](getting-started/first-run/) |
-| want to see it before you read | [Videos](getting-started/videos/) |
-| want to know why it works this way | [Why Pit Crew](how-it-works/why/) |
-| want the whole run on one page | [The flow](how-it-works/the-flow/) |
-| have a bug, not a feature | [Bug triage](how-it-works/triage/) |
-| are not a developer | [Product mode](how-it-works/product-mode/) |
-| want it to read your tracker, logs or test environment | [Roles and bindings](roles/) |
-| want one install for your whole team | [Packs](packs/) |
-| need the exact name of a command, skill or agent | [Reference](reference/commands/) |
+| Designs the product, the process and the tolerances | Designs the solution, the architecture, the contracts and the path to production |
+| The machines make the parts | The agents write the code |
+| Quality control on the line, not only inspection at the end | Tests, review and evidence while the change is built |
+| Answers for what leaves the plant | Answers for what reaches production and works |
+| When it goes wrong, improves the process | When it goes wrong, improves the design, the tests and the tools |
 
-## The one-paragraph version
+[Why it changes the job](how-it-works/why/)
 
-Pit Crew is a Claude Code plugin that delivers a feature through four phases, for any repo, any stack and any toolset. You decide before any code is written: once on the business, once on the architecture. If the session can write, the run then goes unattended. It implements in a worktree, runs the affected tests, puts an adversarial judge on the whole diff, opens the pull requests, verifies the acceptance criteria and resolves review comments. It stops at PR links and never merges. Deploy is a separate command that only you start.
+## How you work: two gates
 
-| Phase | Command | What happens |
-|---|---|---|
-| [1 · plan](how-it-works/plan/) | `/pit-crew:plan` | Business gate, then architecture gate. The only two human gates of a `full` run |
-| [2 · dev](how-it-works/dev/) | `/pit-crew:dev` | Implement, run the affected tests, review, adversarial judge |
-| [3 · test](how-it-works/test/) | `/pit-crew:test` | Scoped tests, pre-push review, pull requests, verification in DEV, review comments |
-| [4 · deploy](how-it-works/deploy/) | `/pit-crew:deploy` | Manual only. Merges the approved PRs one at a time and drives the production rollout |
+Your time goes to two decisions, and both come before any code exists.
+
+- **Gate 1a · business**, the product gate. What the change does, for whom, and the acceptance criteria. No technical vocabulary.
+- **Gate 1c · architecture**, the technical gate. The design, the contracts between services, the data changes and the risks.
+
+At each gate you validate an artifact, not a conversation: a business spec, then a decision table and a plan page. Each gate closes with a two-line recap. That recap is what you approve, and the final report repeats it word for word.
+
+```mermaid
+flowchart TB
+    R(["Ticket or prompt"]) --> G1
+    subgraph YOU["You"]
+        direction LR
+        G1{{"Gate 1a · business<br>what, for whom, criteria"}} --> G2{{"Gate 1c · architecture<br>design, contracts, risks"}}
+    end
+    subgraph AGENTS["The agents"]
+        direction LR
+        I["Implement"] --> J["Judge"] --> T["Tests"] --> S["Pre-push gate"] --> P["Pull requests<br>with evidence"]
+    end
+    G2 --> I
+    P -. you review the PR and start the deploy .-> D(["Production"])
+```
+
+[Where you work: the two gates](how-it-works/your-two-gates/)
+
+## What the agents do
+
+After Gate 1c you do not go back to typing code. If the session can write, the run continues on its own:
+
+1. It implements the approved design in a git worktree, never in your clone.
+2. It runs the tests the change affects.
+3. On a `full` run an adversarial judge attacks the whole diff against the ticket and the acceptance criteria.
+4. It runs the pre-push gate: a standards pass and a secret scan.
+5. It opens the pull requests, verifies each acceptance criterion and answers the review comments.
+
+It stops at green PR links, each with its evidence in the body.
+
+:::note[Where the unattended part ends today]
+A run ends at green pull requests. A person reviews and approves them, and you start the merge and the rollout yourself with `/pit-crew:deploy`. A run that continues to production on its own does not exist. That gap is roadmap, not a feature.
+:::
+
+[What the agents do](how-it-works/what-the-agents-do/)
+
+## Guarantees
+
+An unattended run is only worth trusting if you can check it afterwards and if some mistakes cannot happen at all.
+
+<CardGrid>
+  <Card title="Evidence" icon="document">
+    Every acceptance criterion comes back with its proof in the PR body. A criterion the run could not prove is reported as not tested. It never closes green on a guess.
+  </Card>
+  <Card title="Guards" icon="warning">
+    Hooks deny the riskiest actions before the tool call runs: a force-push, a merge that skips the repo's rules, a whole-suite test run, a write by a read-only agent.
+  </Card>
+  <Card title="A judge" icon="magnifier">
+    The agent that wrote the code does not grade it. On a `full` run a separate judge treats the diff as wrong until the code proves otherwise.
+  </Card>
+  <Card title="Hard caps" icon="error">
+    A red build or test gets three fix rounds. A fourth is refused and the run stops with the log path.
+  </Card>
+</CardGrid>
+
+[Guarantees](how-it-works/guarantees/)
+
+## A portable core, and connectors
+
+The core is portable: plan, implementation, judge, pre-push gate and pull request, on top of `git` and `gh`. It names no company tool.
+
+Everything specific to a company comes in through a connector. A tracker, a knowledge base, a test environment, logs, a database, review bots and a deploy tool are **roles** you connect. With none connected, a run still plans with two gates, implements, tests, reviews and opens the PRs. Each step that needs a missing role is skipped and recorded, and the report says what was not tested.
+
+A **pack** is a second plugin that connects one organisation's tools in one install.
+
+[Roles and bindings](roles/) · [Packs](packs/)
 
 ## See a run
 
@@ -56,28 +121,11 @@ Pit Crew is a Claude Code plugin that delivers a feature through four phases, fo
 
 *5:48, for engineers. The ticket, test environment and logs it shows come from the roles you connect. More in [Videos](getting-started/videos/).*
 
-## An open core
+[A worked example](getting-started/worked-example/) follows one bug from the report to the rollout, using the plugin's own templates and eval cases.
 
-<CardGrid>
-  <Card title="No company tool inside" icon="puzzle">
-    A tracker, a knowledge base, a test environment, logs, a database, review bots and a deploy tool are [roles](roles/) you connect. The core names none of them.
-  </Card>
-  <Card title="Works with nothing connected" icon="rocket">
-    With every role off it still plans with two gates, implements in a worktree, runs the affected tests, reviews and opens the PRs.
-  </Card>
-  <Card title="Packs" icon="open-book">
-    A [pack](packs/) is a second plugin that connects one organisation's tools in one install.
-  </Card>
-  <Card title="No telemetry by default" icon="approve-check">
-    Nothing is queued or sent unless you name a collector. [What is sent when it is on](roles/telemetry/).
-  </Card>
-</CardGrid>
+## Install and reference
 
-## What it never does
+When you want to run it:
 
-- Never merges a PR on its own. Only `/pit-crew:deploy`, invoked by you, merges, and only the PRs of that run.
-- Never merges with `--admin` and never force-pushes. A branch behind `main` is merged forward.
-- Never writes to production outside `/pit-crew:deploy`. Everywhere else production is read-only for every agent.
-- Never closes green with a criterion it could not prove. That criterion is reported as not tested.
-
-How these are enforced: [Guardrails](how-it-works/guardrails/).
+- [Install](getting-started/install/) and [Your first run](getting-started/first-run/).
+- [Reference](reference/commands/): every command, flag, skill, agent and hook.

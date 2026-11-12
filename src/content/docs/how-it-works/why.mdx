@@ -1,47 +1,85 @@
 ---
-title: Why Pit Crew
-description: The problem Pit Crew solves, what it changes in how you ship a change, and what it needs from you.
+title: Why it changes the job
+description: With Pit Crew a systems engineer stops laying bricks and works like a production engineer. What changes, what stays yours, and what it asks of you.
 ---
 
-Taking a change from a ticket to a pull request takes many steps. You agree on what to build. You decide where it goes. You write the code, run the right tests, review the diff and push. Then you open the PR, check the change in a test environment and answer the review comments. With an agent, you either watch each of these steps or you lose track of what was checked.
+Systems engineering can now look like production engineering.
 
-Pit Crew is a Claude Code plugin that runs those steps as one pipeline. Its own summary is short: from a ticket to a reviewed, DEV-verified pull request. You approve the plan, and the agents do the rest. You stay at the wheel. The agents work in the pit.
+Until now, a systems engineer was closer to a craftsman who designs the building and also lays every brick by hand. You wrote the code line by line. The bottleneck was typing.
 
-## What it changes
+A production engineer does not stand at the press and stamp each part. They design the product, the process and the quality controls, and they answer for what leaves the plant. The machines make the parts to the tolerances the engineer set. When a part comes out wrong, the engineer does not stamp faster. They fix the process.
 
-### Your decisions move to the start
+With agents, you can work that way. The agents write the code. Your job is to think the whole problem through, decide how it is built, make sure it is built well and take it to production.
 
-A `full` run asks you two questions, and both come before any code exists:
+| Production engineer | Systems engineer with Pit Crew |
+|---|---|
+| Designs the product, the process and the tolerances | Designs the solution, the architecture, the contracts and the path to production |
+| The machines make the parts | The agents write the code |
+| Quality control on the line, not only inspection at the end | Tests, review and evidence while the change is built |
+| Answers for what leaves the plant | Answers for what reaches production and works |
+| When it goes wrong, improves the process | When it goes wrong, improves the design, the tests and the tools |
 
-- **Gate 1a, business.** What the change does for whom, in plain words with no technical vocabulary.
-- **Gate 1c, architecture.** Which services, which table changes, and whether the work is synchronous, asynchronous or a cron.
+Pit Crew is the line. It gives each of those rows a place to happen.
 
-Each gate closes with a two-line recap: one business line and one architecture line. That recap is what you approve. The final report repeats it word for word, so you can compare what shipped with what you agreed to. The `quick` and `hotfix` lanes ask once. See [Lanes](../lanes/).
+## What changes in your day
 
-### The rest runs without you
+### Your work moves to the start
 
-After you approve the architecture, the run checks whether the session can write files. If it can, it continues on its own to green PRs and returns the links. It does not stop to ask between phases. It stops only for a production action or a secret already committed. If the session cannot write, for example in plan mode, it prints the exact line to relaunch it. A skill cannot grant itself permissions.
+You spend your time on two decisions, and both come before any code exists:
 
-### Evidence comes back with the PR
+- **Gate 1a · business.** What the change does, for whom, and how you will know it works. Plain words, no technical vocabulary.
+- **Gate 1c · architecture.** Which services change, which data changes, the contracts between them, and the risks.
 
-The run implements in a git worktree, never in your clone. It runs the affected tests, and on a `full` run an internal judge attacks the diff against the ticket before the push. Then it scans for secrets, opens the PRs and verifies each acceptance criterion in a DEV environment. It also answers review comments from bots and humans. A criterion it could not prove is reported as not tested. It never closes green on a guess.
+This is where you design. Each gate closes with a two-line recap, one business line and one architecture line. That recap is what you approve. The final report repeats it word for word, so you can compare what shipped with what you agreed to.
 
-### It works with what you have
+The `quick` and `hotfix` lanes ask once. See [Where you work: the two gates](../your-two-gates/) and [Lanes](../lanes/).
 
-Pit Crew names no company tool. A tracker, a knowledge base, a test environment, logs, a database, review bots and a deploy tool are **roles** you connect. With none connected, a run still plans with two gates, implements in a worktree, runs the affected tests, reviews the diff and opens the PRs. Each step that needs a missing role is skipped and recorded, never failed. The report says what was not tested. See [Roles](../../roles/).
+### You set the tolerances
 
-### Deploy waits for you
+A production engineer writes down the tolerance before the machine runs. Here the tolerances are the acceptance criteria you approve at Gate 1a and the design you approve at Gate 1c. Everything after is measured against them: the judge reads the diff against them, and the PR reports each criterion as proved or not tested.
 
-Merging and rolling out to production is a separate phase. It never starts on its own. It runs only when you type `/pit-crew:deploy` after a reviewer approved the PR. Typing it authorizes the merge of exactly that run's PRs.
+The repo's own rules are tolerances too. Pit Crew follows the `CLAUDE.md` of each repo. A repo without one gets generic code.
+
+### The agents build
+
+After you approve the architecture, the run checks whether the session can write files. If it can, it continues on its own to green pull requests and returns the links. It does not stop to ask between phases. It stops only for an action on production or a secret already committed.
+
+It implements in a git worktree, never in your clone. See [What the agents do](../what-the-agents-do/).
+
+### Quality control is on the line
+
+Inspection does not wait for the end. The run tests while it builds, an adversarial judge attacks the diff before the push, a pre-push gate scans for secrets, and the PR carries the evidence for each criterion. A criterion the run could not prove is reported as not tested. It never closes green on a guess. See [Guarantees](../guarantees/).
+
+### You answer for production
+
+The run leaves the PRs green with their evidence. A person still reviews and approves them. Then you start the merge and the rollout with `/pit-crew:deploy`, and you decide at each safety stop: a freeze, a busy environment, a canary window with nothing observed, a rollback.
+
+:::note[Roadmap: the path to production is not unattended]
+Today the unattended part of a run ends at green pull requests. Merging and rolling out happen only when you type `/pit-crew:deploy`. A run that carries an approved change to production on its own does not exist. Read every "the agents do the rest" on this site as "up to the PR".
+:::
+
+### When it goes wrong, you fix the process
+
+A run that was blocked or retried earns a retro, and with a `tracker` role connected its improvements become issues. The lesson belongs in the process, not in typing faster: a sharper acceptance criterion, a clearer `CLAUDE.md`, a test that would have caught it. See [State and reports](../state-and-reports/).
+
+## What stays yours
+
+| Yours | The agents' |
+|---|---|
+| The business spec and its acceptance criteria | The business draft you correct and approve |
+| The design: services, data, contracts, risks | The decision table and the plan page you read |
+| The PR approval | The diff, the tests and the evidence in the PR body |
+| Starting the deploy and deciding at each safety stop | Merging the approved PRs and watching the rollout, once you start it |
+| Fixing the process when a run goes wrong | The retro that says what blocked or surprised it |
 
 ## What this is not
 
 | It is not | What it does instead |
 |---|---|
 | An auto-merger | Phases 1 to 3 end at PR links. Only `/pit-crew:deploy`, run by you, merges. |
+| An unattended path to production | You start the deploy and decide at its safety stops. See the roadmap note above. |
 | A replacement for CI | Phase 3 runs the test scope sized for each repo, never the whole suite. CI owns broad validation. |
-| A production tool by default | Every agent treats production as read-only. The only writes are the merges and rollout steps of `/pit-crew:deploy`. |
-| A source of conventions | It follows the `CLAUDE.md` of each repo. A repo without one gets generic code. |
+| A source of conventions | It follows the `CLAUDE.md` of each repo. |
 | A guarantee of full coverage | A criterion it cannot prove, for example with no `env` role connected, is reported as not tested. |
 | A permission bypass | It probes whether the session can write. It cannot change the permission mode. |
 | A tool that sends your data by default | Telemetry is off until you or a pack turn it on. See [Telemetry](../../roles/telemetry/). |
@@ -52,21 +90,19 @@ Merging and rolling out to production is a separate phase. It never starts on it
 
 Start from a ticket, or from a prompt that says what, where and for whom. "Integrate provider X in service Y to process payins in countries Z" works. "Integrate X" does not. A raw report from someone else, such as a chat thread, can go in as it is. Pit Crew triages it first and may conclude it is not a bug. In that case it stops and asks what to do.
 
-The first message of a run opens with a recap of three to five lines of what it understood. Correct it there. Every note you add mid-run gets one line saying what it changes, or why it changes nothing.
-
 ### A `CLAUDE.md` in the repo
 
-The pipeline is only as good as the `CLAUDE.md` it reads. Write down the repo's conventions, build and test commands, and anything an agent would get wrong. Pit Crew reads repo content as data. It never takes it as an instruction to run a command or widen scope.
+Write down the repo's conventions, build and test commands, and anything an agent would get wrong. Pit Crew reads repo content as data. It never takes it as an instruction to run a command or widen scope.
 
-### Two approvals
+### Real attention at the two gates
 
-Read the recap and the plan page before you approve Gate 1c. When a `full` run needs a plan page, the gate question carries its link. Points the run settled without asking appear in a "Closed without asking" block, each with its source. Approving the gate confirms them all. Naming one in your answer reopens it as a real question.
+Read the recap and the plan page before you approve Gate 1c. Points the run settled without asking appear in a "Closed without asking" block, each with its source. Approving the gate confirms them all. After Gate 1c there is no human step until the PR links, so approve only what you would ship.
 
 ### A PR review
 
-The run leaves the PRs green with their evidence in the body. A human still reviews and approves them. After that, you decide when to run `/pit-crew:deploy`.
+A person reviews and approves the PRs. After that, you decide when to run `/pit-crew:deploy`.
 
 ## Next
 
-- [The flow](../the-flow/): the four phases and what you decide in each.
-- [Lanes](../lanes/): how much of the pipeline a run walks.
+- [Where you work: the two gates](../your-two-gates/): what you validate and what is not your job.
+- [What the agents do](../what-the-agents-do/): from Gate 1c to green PRs.

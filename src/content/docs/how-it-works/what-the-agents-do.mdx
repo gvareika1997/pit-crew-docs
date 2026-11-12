@@ -1,0 +1,75 @@
+---
+title: What the agents do
+description: From Gate 1c to green pull requests, the agents implement, judge, test, scan and open the PRs with evidence. What they do, what stays human, and where the unattended part ends.
+---
+
+You approved the design at Gate 1c. From here you do not write the code. If the session can write files, the run continues on its own and returns pull request links.
+
+If the session cannot write, for example in plan mode, the run says so and prints the line to relaunch it. A skill cannot grant itself permissions.
+
+## From Gate 1c to green pull requests
+
+1. **A worktree per repo.** The run works in a git worktree outside your clone. Your checkout is not touched.
+2. **Implementation.** It implements the approved design: inline for a trivial change, through a Builder agent otherwise.
+3. **Affected tests.** It runs the tests it added or changed, plus the closest affected ones. The build and those tests must be green.
+4. **One review pass.** It reads each repo's diff once and marks every acceptance criterion `MET`, `NOT_MET` or `PARTIAL`, with `path:line` proof. It also checks unrequested scope, wiring and the repo's conventions.
+5. **The judge.** On a `full` run, a separate agent attacks the whole diff, every repo at once, against the intent, the criteria and the cross-repo contract. It never sees the Builder's report. Findings go back for a fix, up to three rounds.
+6. **Scoped tests.** It runs the test scope sized for each repo, never the whole suite. CI owns the broad run.
+7. **The pre-push gate.** A standards pass against the repo's own rules, and a secret scan. Without the scanner installed, the step stops before the push. It never records a clean scan it did not run.
+8. **Pull requests.** It pushes and opens the PRs. Each body carries a summary, the evidence, the merge danger and the links.
+9. **Verification.** It verifies each acceptance criterion in a test environment when the `env` role is connected. A criterion it could not prove is reported as not tested.
+10. **Review comments.** It answers and resolves the review comments of bots and humans.
+11. **The report.** It repeats the two-line recap you approved, word for word, next to what was tested and what was not.
+
+If the diff drifted from the criteria, the run loops internally. It does not ask you, and it does not move on with a known gap.
+
+The run stops and asks in only two situations, because a re-run cannot undo them: anything touching production, and a secret already committed.
+
+Each step in detail: [Dev](../dev/) and [Test](../test/).
+
+## What stays human
+
+Be clear about this. The agents do not take a change to production on their own.
+
+| Step | Who |
+|---|---|
+| Review and approve the pull request | a person |
+| Start the merge and the rollout | you, by typing `/pit-crew:deploy` |
+| Decide at a safety stop: a freeze, a busy environment, a canary window with nothing observed, a rollback | you |
+| Merge the approved PRs one at a time and watch each rollout | the agents, once you start the deploy |
+
+Typing `/pit-crew:deploy` authorizes the merge of exactly that run's PRs. You can also drive it yourself: with `--driver human` you merge and advance each step while Pit Crew monitors and recommends. See [Deploy](../deploy/).
+
+After you validate the artifact, you do not go back to typing code. You authorize, and you watch the line.
+
+## Today, and the roadmap
+
+| | Today | Roadmap |
+|---|---|---|
+| From Gate 1c to pull requests | Unattended, when the session can write | |
+| Pull request approval | A person | |
+| Merge and rollout | Start only when you type `/pit-crew:deploy` | A run that continues to production after the approval. Not built. |
+| Safety stops in the rollout | Always ask you | |
+
+:::caution[Do not read more into it]
+"The agents do the rest" means up to green pull requests with evidence. Nothing in Pit Crew merges or deploys without you starting it.
+:::
+
+## Which agents
+
+You do not call them. The phases dispatch them.
+
+| Agent | Its job |
+|---|---|
+| `df-implementer` | Implements the approved design in one repo, compiles it and runs the affected tests |
+| `df-judge` | Attacks the whole diff against the ticket and the criteria before anything is pushed |
+| `df-standards` | Checks the changed lines against the repo's rules and the stack's checklists before the push |
+| `df-dev-tester` | Runs every acceptance criterion in the test environment and brings back raw evidence |
+| `df-comment-resolver` | Answers and resolves the PR's review comments |
+
+The full list, with models and tools: [Agents](../../reference/agents/).
+
+## Next
+
+- [Guarantees](../guarantees/): why you can trust what comes back.
+- [The flow](../the-flow/): the four phases on one page.
